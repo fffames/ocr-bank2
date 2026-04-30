@@ -40,15 +40,22 @@ def process_with_groq(raw_text: str):
         }
 
     prompt = f"""
-    You are an intelligent data extraction system. 
+    You are an intelligent data extraction system.
     From raw text obtained via OCR of a transfer slip or receipt, extract the information into JSON format only, with the following fields:
-        - date: Date (format YYYY-MM-DD)
+        - date: Date in format YYYY-MM-DD using BUDDHIST ERA (BE) year - DO NOT convert to Gregorian/CE.
+                - If the year is 4 digits starting with 25 (e.g., 2569), use it directly as-is.
+                - If the year is 2 digits (e.g., 69), prepend "25" to make it 4-digit BE (e.g., 69 → 2569).
+                - Examples: "17 เม.ย. 2569" → "2569-04-17", "30 เม.ย. 69" → "2569-04-30"
         - time: Time (format HH:mm)
-        - sender: Name of sender
-        - receiver: Name of receiver
+        - sender: Name of sender - If keywords "จาก" (from) exist, use the name after it. Otherwise, the FIRST person's name found is the sender.
+        - receiver: Name of receiver - If keywords "ไปยัง" or "ถึง" (to) exist, use the name after them. Otherwise, the SECOND person's name found is the receiver.
         - amount: Amount (numbers only)
         - note: Memo (if any; if none, put null)
+
+    Raw Text:
     {raw_text}
+
+
     """
 
     try:
