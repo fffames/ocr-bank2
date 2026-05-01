@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite3
+
+# Uploads and images
+backend/uploads/*
+backend/images/*
+!backend/uploads/.gitkeep
+!backend/images/.gitkeep
+
+# Vector store
+backend/data/chromadb/*
+
+# Google Sheets credentials
+backend/config/credentials.json
+
+# Build output
+frontend/dist/
+frontend/build/
+
+# Alembic
+*.pyc
