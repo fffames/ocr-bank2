@@ -9,7 +9,7 @@ import aiofiles
 
 from app.database.connection import get_db
 from app.models.receipt import Receipt
-from app.services.ocr_service import get_ocr_service
+from app.services.vlm_service import get_vlm_service
 from app.config import settings
 
 router = APIRouter()
@@ -38,14 +38,7 @@ async def upload_images(
     os.makedirs(settings.image_storage_path, exist_ok=True)
 
     processed_receipts = []
-    ocr_service = get_ocr_service()
-
-    # Ensure upload and image directories exist
-    os.makedirs("uploads", exist_ok=True)
-    os.makedirs(settings.image_storage_path, exist_ok=True)
-
-    processed_receipts = []
-    ocr_service = get_ocr_service()
+    vlm_service = get_vlm_service()
 
     for file in files:
         # Validate file type
@@ -76,8 +69,9 @@ async def upload_images(
             async with aiofiles.open(upload_path, "wb") as f:
                 await f.write(content)
 
-            # Process with OCR
-            ocr_result = ocr_service.extract_text_from_image(upload_path)
+            # Process with VLM
+            print(f"Processing {file.filename} with VLM...")
+            ocr_result = vlm_service.extract_text_from_image(upload_path)
 
             # Move file to permanent storage
             os.rename(upload_path, final_path)
@@ -160,9 +154,9 @@ async def process_ocr_for_receipt(
         raise HTTPException(status_code=404, detail="Image file not found")
 
     try:
-        # Reprocess with OCR
-        ocr_service = get_ocr_service()
-        ocr_result = ocr_service.extract_text_from_image(receipt.image_path)
+        # Reprocess with VLM
+        vlm_service = get_vlm_service()
+        ocr_result = vlm_service.extract_text_from_image(receipt.image_path)
 
         # Update receipt
         receipt.ocr_raw_text = ocr_result["raw_text"]

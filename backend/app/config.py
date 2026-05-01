@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     # LLM
     gemini_api_key: str = ""
+    groq_api_key: str = ""
     llm_provider: Literal["gemini", "local_gemma"] = "gemini"
     local_llm_url: str = "http://localhost:1234/v1"
 

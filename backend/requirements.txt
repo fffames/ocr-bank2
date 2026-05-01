@@ -9,14 +9,14 @@ alembic>=1.13.1
 psycopg2-binary>=2.9.9
 asyncpg>=0.29.0
 
-# OCR
-paddleocr>=2.7.0
-paddlepaddle>=3.0.0
+# Image Processing
 pillow>=10.2.0
+base64>=1.0.0
 
 # LLM & RAG
 google-generativeai>=0.3.2
 chromadb>=0.4.22
+groq>=0.11.0
 
 # Google Sheets
 google-api-python-client>=2.116.0
