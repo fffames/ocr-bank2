@@ -44,10 +44,10 @@ class VLMService:
         # Create prompt for structured extraction
         prompt = """Extract information from this Thai bank receipt image and return ONLY a JSON object with this exact structure:
 {
-  "extracted_date": "YYYY-MM-DD (in Christian era, Buddhist year - 543)",
+  "extracted_date": "YYYY-MM-DD (in Christian era, Buddhist year - 543, if it's Buddhist era, convert to Christian era)",
   "extracted_time": "HH:MM",
   "sender": "sender name or company",
-  "receiver": "receiver name or company",
+  "receiver": "Thai receiver name (starts with นาย, นาง, or นางสาว)or company",
   "amount": "numeric amount (e.g., 3000.00)",
   "note": "additional notes if present"
 }

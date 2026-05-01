@@ -13,6 +13,9 @@ asyncpg>=0.29.0
 pillow>=10.2.0
 base64>=1.0.0
 
+# Local LLM (for LM Studio)
+openai>=1.0.0
+
 # LLM & RAG
 google-generativeai>=0.3.2
 chromadb>=0.4.22

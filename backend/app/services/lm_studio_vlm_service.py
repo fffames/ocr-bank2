@@ -48,25 +48,27 @@ class LMStudioVLMService:
         base64_image = self._encode_image(image_path)
 
         # Create prompt for structured extraction
-        prompt = """Extract information from this Thai bank receipt image and return ONLY a JSON object with this exact structure:
+        prompt = """You are a receipt data extractor. Extract information from this Thai bank receipt image and return ONLY a valid JSON object. Do not include any explanations, markdown formatting, or additional text.
+
+Your response must be EXACTLY in this format (no deviations):
 {
-  "extracted_date": "YYYY-MM-DD (in Christian era, Buddhist year - 543)",
+  "extracted_date": "YYYY-MM-DD",
   "extracted_time": "HH:MM",
   "sender": "sender name or company",
   "receiver": "receiver name or company",
-  "amount": "numeric amount (e.g., 3000.00)",
+  "amount": "3000.00",
   "note": "additional notes if present"
 }
 
-Rules:
-- For dates: Convert Buddhist era (พ.ศ.) to Christian era (subtract 543)
-- For dates: Thai months: เมษายน=04, มิ.ย.=06, ธ.ค.=10, พ.ย.=11, etc.
-- For names: Include titles like "นาย", "นาง", "นางสาว" if present
-- For amount: Return only the number without currency symbol or spaces
-- If any field is not found, use null
-- Return ONLY the JSON, no other text
+CRITICAL RULES:
+1. Return ONLY the JSON object above, nothing else
+2. For dates: Convert Buddhist era (พ.ศ. 2568 = 2025) by subtracting 543
+3. For Thai dates: เม.ย.=04, มิ.ย.=06, ธ.ค.=12, พ.ย.=11
+4. For amount: Return ONLY digits and decimal point (e.g., "3000.00"), no currency symbols
+5. Include name titles (นาย, นาง, นางสาว) in sender/receiver fields
+6. Use null for missing fields, do not make up values
 
-Extract the receipt data:"""
+Now extract the data from this receipt:"""
 
         try:
             # Call LM Studio API with vision model

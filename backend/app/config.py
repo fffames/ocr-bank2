@@ -8,9 +8,8 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql://ocr_bank_user:ocr_bank_password@localhost:5432/ocr_bank"
 
-    # OCR
-    ocr_language: str = "th"
-    ocr_device: Literal["cpu", "gpu"] = "cpu"
+    # VLM (Vision Language Model for OCR)
+    vlm_provider: Literal["groq", "lm_studio"] = "groq"
 
     # LLM
     gemini_api_key: str = ""

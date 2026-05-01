@@ -10,6 +10,7 @@ import aiofiles
 from app.database.connection import get_db
 from app.models.receipt import Receipt
 from app.services.vlm_service import get_vlm_service
+from app.services.lm_studio_vlm_service import get_lm_studio_vlm_service
 from app.config import settings
 
 router = APIRouter()
@@ -38,7 +39,14 @@ async def upload_images(
     os.makedirs(settings.image_storage_path, exist_ok=True)
 
     processed_receipts = []
-    vlm_service = get_vlm_service()
+
+    # Choose VLM service based on configuration
+    if settings.vlm_provider == "lm_studio":
+        vlm_service = get_lm_studio_vlm_service()
+        print("🖥️  Using LM Studio VLM (local)")
+    else:  # default to groq
+        vlm_service = get_vlm_service()
+        print("☁️  Using Groq VLM (cloud)")
 
     for file in files:
         # Validate file type
