@@ -30,15 +30,27 @@ class RAGService:
         Returns:
             Dictionary containing response and source receipts
         """
+        print(f"\n🔍 RAG Query: {user_query}")
+
         # Step 1: Retrieve relevant receipts using semantic search
         relevant_receipts = self.vector_store.search(user_query, n_results=10)  # Get more results for filtering
+        print(f"📊 Vector store returned {len(relevant_receipts)} results")
+        for r in relevant_receipts[:3]:
+            print(f"   - ID {r['id']}: {r['document'][:60]}...")
 
         # Step 2: Fetch full receipt details from database and filter for data quality
         receipt_ids = [r['id'] for r in relevant_receipts]
+        print(f"🔑 Fetching receipts with IDs: {receipt_ids[:5]}...")
+
         all_receipts = db.query(Receipt).filter(Receipt.id.in_(receipt_ids)).all()
+        print(f"💾 Database returned {len(all_receipts)} receipts")
 
         # Filter to only include receipts with actual data
         receipts = [r for r in all_receipts if r.sender or r.receiver or r.amount]
+        print(f"✅ After filtering for data: {len(receipts)} receipts")
+
+        for r in receipts[:3]:
+            print(f"   - ID {r.id}: sender={bool(r.sender)}, receiver={bool(r.receiver)}, amount={bool(r.amount)}")
 
         if not receipts:
             return {

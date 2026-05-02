@@ -164,6 +164,15 @@ def delete_receipt(receipt_id: int, db: Session = Depends(get_db)):
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
 
+    # Delete from vector store
+    try:
+        from app.services.vector_store import get_vector_store
+        vector_store = get_vector_store()
+        vector_store.delete_receipt(receipt_id)
+        print(f"✅ Deleted receipt {receipt_id} from vector store")
+    except Exception as e:
+        print(f"⚠️  Could not delete from vector store: {e}")
+
     # Delete image file
     import os
     try:
@@ -189,21 +198,45 @@ def get_receipt_stats(db: Session = Depends(get_db)):
 
     Returns:
         Statistics including total receipts, total amount, and status counts
+        Separated by transaction type (sending vs receiving)
     """
     total_receipts = db.query(Receipt).count()
 
     from sqlalchemy import func
-    total_amount_result = db.query(func.sum(Receipt.amount)).filter(Receipt.amount.isnot(None)).first()
-    total_amount = float(total_amount_result[0]) if total_amount_result[0] else 0.0
+
+    # Calculate sending amount (paying out)
+    sending_amount_result = db.query(func.sum(Receipt.amount)).filter(
+        Receipt.transaction_type == "sending",
+        Receipt.amount.isnot(None)
+    ).first()
+    sending_amount = float(sending_amount_result[0]) if sending_amount_result[0] else 0.0
+
+    # Calculate receiving amount (income)
+    receiving_amount_result = db.query(func.sum(Receipt.amount)).filter(
+        Receipt.transaction_type == "receiving",
+        Receipt.amount.isnot(None)
+    ).first()
+    receiving_amount = float(receiving_amount_result[0]) if receiving_amount_result[0] else 0.0
+
+    # Net amount = receiving - sending
+    net_amount = receiving_amount - sending_amount
 
     pending_count = db.query(Receipt).filter(Receipt.status == "pending").count()
     reviewed_count = db.query(Receipt).filter(Receipt.status == "reviewed").count()
     confirmed_count = db.query(Receipt).filter(Receipt.status == "confirmed").count()
 
+    # Count by transaction type
+    sending_count = db.query(Receipt).filter(Receipt.transaction_type == "sending").count()
+    receiving_count = db.query(Receipt).filter(Receipt.transaction_type == "receiving").count()
+
     return {
         "total_receipts": total_receipts,
-        "total_amount": total_amount,
+        "total_amount": net_amount,  # Changed to net amount
+        "sending_amount": sending_amount,
+        "receiving_amount": receiving_amount,
         "pending_count": pending_count,
         "reviewed_count": reviewed_count,
-        "confirmed_count": confirmed_count
+        "confirmed_count": confirmed_count,
+        "sending_count": sending_count,
+        "receiving_count": receiving_count
     }

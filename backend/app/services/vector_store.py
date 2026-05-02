@@ -68,6 +68,12 @@ class VectorStore:
         """Index a receipt in the vector store."""
         try:
             text = self._create_searchable_text(receipt_data)
+            print(f"📝 Vector store indexing receipt {receipt_id}: {text[:100]}...")
+
+            if not text or text.strip() == ".":
+                print(f"⚠️  Receipt {receipt_id} has no searchable text, skipping")
+                return
+
             embedding = self._generate_embedding(text)
 
             self.collection.add(
@@ -81,8 +87,11 @@ class VectorStore:
                     "receiver": str(receipt_data.get('receiver', '')),
                 }]
             )
+            print(f"✅ Successfully indexed receipt {receipt_id}")
         except Exception as e:
-            print(f"Error indexing receipt {receipt_id}: {e}")
+            import traceback
+            print(f"❌ Error indexing receipt {receipt_id}: {e}")
+            traceback.print_exc()
 
     def search(self, query: str, n_results: int = 5) -> List[Dict[str, Any]]:
         """Search for similar receipts."""
@@ -117,6 +126,24 @@ class VectorStore:
             self.collection.delete(ids=[str(receipt_id)])
         except Exception as e:
             print(f"Error deleting receipt {receipt_id}: {e}")
+
+    def get_count(self) -> int:
+        """Get the number of receipts in the vector store."""
+        try:
+            return self.collection.count()
+        except Exception as e:
+            print(f"Error getting count: {e}")
+            return 0
+
+    def clear_all(self) -> None:
+        """Clear all receipts from the vector store."""
+        try:
+            count = self.collection.count()
+            print(f"🗑️  Clearing {count} receipts from vector store...")
+            self.collection.delete(where={})
+            print(f"✅ Vector store cleared")
+        except Exception as e:
+            print(f"Error clearing vector store: {e}")
 
 
 # Singleton instance

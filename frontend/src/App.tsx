@@ -172,9 +172,13 @@ function Dashboard() {
   const [stats, setStats] = useState({
     total_receipts: 0,
     total_amount: 0,
+    sending_amount: 0,
+    receiving_amount: 0,
     pending_count: 0,
     reviewed_count: 0,
-    confirmed_count: 0
+    confirmed_count: 0,
+    sending_count: 0,
+    receiving_count: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -196,6 +200,8 @@ function Dashboard() {
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
+
+      {/* Main Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Receipts</h3>
@@ -203,12 +209,15 @@ function Dashboard() {
             {loading ? '...' : stats.total_receipts}
           </p>
         </div>
+
+        {/* Net Amount (can be positive or negative) */}
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Amount</h3>
-          <p className="text-3xl font-bold text-green-600">
-            {loading ? '...' : `฿${stats.total_amount.toFixed(2)}`}
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Net Balance</h3>
+          <p className={`text-3xl font-bold ${stats.total_amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {loading ? '...' : `${stats.total_amount >= 0 ? '+' : ''}฿${stats.total_amount.toFixed(2)}`}
           </p>
         </div>
+
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Pending Review</h3>
           <p className="text-3xl font-bold text-yellow-600">
@@ -217,7 +226,30 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Additional Stats */}
+      {/* Income vs Expenses */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Received (Income)</h3>
+          <p className="text-2xl font-bold text-green-600">
+            {loading ? '...' : `+฿${stats.receiving_amount.toFixed(2)}`}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {stats.receiving_count} transactions
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Sent (Expenses)</h3>
+          <p className="text-2xl font-bold text-red-600">
+            {loading ? '...' : `-฿${stats.sending_amount.toFixed(2)}`}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {stats.sending_count} transactions
+          </p>
+        </div>
+      </div>
+
+      {/* Status Counts */}
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Reviewed</h3>
