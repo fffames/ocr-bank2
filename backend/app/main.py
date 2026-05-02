@@ -28,7 +28,7 @@ async def validation_exception_handler(request, exc: RequestValidationError):
     )
 
 from fastapi.staticfiles import StaticFiles
-app.mount("/images", StaticFiles(directory="images"), name="images")
+app.mount("/images", StaticFiles(directory="backend/images"), name="images")
 
 # Configure CORS
 app.add_middleware(

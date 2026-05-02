@@ -206,7 +206,8 @@ async def upload_images(
                         'sender': receipt.sender,
                         'receiver': receipt.receiver,
                         'amount': float(receipt.amount) if receipt.amount else None,
-                        'note': receipt.note
+                        'note': receipt.note,
+                        'transaction_type': receipt.transaction_type  # Add transaction type
                     }
                     vector_store.index_receipt(receipt.id, receipt_data)
                     print(f"  ✅ Auto-indexed receipt {receipt.id} in vector store")

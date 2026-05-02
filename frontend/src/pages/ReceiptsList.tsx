@@ -80,9 +80,6 @@ export default function ReceiptsListPage() {
 
   return (
     <div>
-      {/* Debug header */}
-      {console.log('🎨 Rendering ReceiptsList', { loading, receiptsCount: receipts.length })}
-
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Receipts</h1>
 
       {/* Search and Filter */}
@@ -246,9 +243,13 @@ export default function ReceiptsListPage() {
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Original Image</h3>
                   <img
-                    src={`http://localhost:8000${selectedReceipt.image_path}`}
+                    src={`http://localhost:8000${selectedReceipt.image_path.replace('./backend/images', '/images')}`}
                     alt={selectedReceipt.filename}
                     className="w-full rounded-lg border border-gray-200"
+                    onError={(e) => {
+                      console.error('Failed to load image:', selectedReceipt.image_path);
+                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3EImage not found%3C/text%3E%3C/svg%3E';
+                    }}
                   />
                 </div>
 

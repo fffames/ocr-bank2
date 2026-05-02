@@ -1,0 +1,51 @@
+bank_name: Krungthai
+description: ''
+detection:
+  keywords: []
+  primary_method: keywords
+image_size:
+- 764
+- 971
+template_id: Krungthai
+version: '1.0'
+zones:
+  amount:
+    height_percent: 6.088407678230235
+    parser: thai_amount
+    preprocessor: grayscale
+    required: false
+    width_percent: 41.79067815691974
+    x_percent: 54.891204224919655
+    y_percent: 75.02156579785391
+  date:
+    height_percent: 5.159667523923927
+    parser: thai_date
+    preprocessor: grayscale
+    required: false
+    width_percent: 27.118088960759827
+    x_percent: 55.15321474627966
+    y_percent: 87.71434790670676
+  receiver_name:
+    height_percent: 9.90656164593394
+    parser: text
+    preprocessor: grayscale
+    required: false
+    width_percent: 43.49374654575973
+    x_percent: 15.982641802959899
+    y_percent: 53.918525625005046
+  sender_name:
+    height_percent: 8.977821491627633
+    parser: text
+    preprocessor: grayscale
+    required: false
+    width_percent: 39.43258346467975
+    x_percent: 15.327615499559904
+    y_percent: 32.351115375003026
+  time:
+    height_percent: 5.572440925837841
+    parser: time
+    preprocessor: grayscale
+    required: false
+    width_percent: 13.100526067999919
+    x_percent: 84.23638261723947
+    y_percent: 87.50796120574981

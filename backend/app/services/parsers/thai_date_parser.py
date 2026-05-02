@@ -33,6 +33,7 @@ class ThaiDateParser(BaseParser):
         - "28 มกราคม 2567" (full year, Buddhist era)
         - "28/01/2024" (Christian era)
         - "28-01-2024" (Christian era)
+        - OCR error correction for common misreads
 
         Args:
             text: OCR text containing a date
@@ -46,6 +47,9 @@ class ThaiDateParser(BaseParser):
         # Clean text first
         cleaned = self.clean_text(text)
 
+        # Apply OCR error correction for Thai characters
+        cleaned = self._correct_ocr_errors(cleaned)
+
         # Try different patterns
         result = self._try_thai_month_pattern(cleaned)
         if result:
@@ -56,6 +60,85 @@ class ThaiDateParser(BaseParser):
             return result
 
         return None
+
+    def _correct_ocr_errors(self, text: str) -> str:
+        """
+        Correct common OCR errors in Thai text.
+
+        Tesseract often misreads Thai characters as similar-looking Latin letters.
+        This method fixes common misreads based on visual similarity.
+        """
+        # Common OCR misreads mapping (Latin → Thai)
+        # Order matters: more specific patterns first
+        ocr_corrections = {
+            # February (ก.พ.) - commonly misread as n.w. due to visual similarity
+            'n.w.': 'ก.พ.',
+            'n w.': 'ก.พ.',
+            'n.w': 'ก.พ.',
+            'n w': 'ก.พ.',
+
+            # January (ม.ค.)
+            'm.w.': 'ม.ค.',
+            'm w.': 'ม.ค.',
+            'm.w': 'ม.ค.',
+            'ม.c.': 'ม.ค.',
+            'ม c': 'ม.ค.',
+
+            # March (มี.ค.)
+            'm.y.': 'มี.ค.',
+            'm y.': 'มี.ค.',
+            'm i.': 'มี.ค.',
+
+            # April (เม.ย.)
+            'a.y.': 'เม.ย.',
+            'เ m.': 'เม.ย.',
+            'เ m': 'เม.ย.',
+
+            # May (พ.ค.)
+            'p.c.': 'พ.ค.',
+            'พ c': 'พ.ค.',
+
+            # June (มิ.ย.)
+            'm.c.': 'มิ.ย.',
+            'm i.': 'มิ.ย.',
+            'ม y.': 'มิ.ย.',
+
+            # July (ก.ค.)
+            'k.k.': 'ก.ค.',
+            'k k.': 'ก.ค.',
+            'ก k': 'ก.ค.',
+
+            # August (ส.ค.)
+            's.k.': 'ส.ค.',
+            'ส c': 'ส.ค.',
+            's k': 'ส.ค.',
+
+            # September (ก.ย.)
+            'k.y.': 'ก.ย.',
+            'k y.': 'ก.ย.',
+            'ก y': 'ก.ย.',
+
+            # October (ต.ค.)
+            't.k.': 'ต.ค.',
+            'ต c': 'ต.ค.',
+            't k': 'ต.ค.',
+
+            # November (พ.ย.)
+            'p.y.': 'พ.ย.',
+            'พ y': 'พ.ย.',
+            'พ y.': 'พ.ย.',
+
+            # December (ธ.ค.)
+            'th.k.': 'ธ.ค.',
+            'ธ c': 'ธ.ค.',
+            't k.': 'ธ.ค.',
+        }
+
+        corrected = text
+        for wrong, right in ocr_corrections.items():
+            corrected = corrected.replace(wrong, right)
+
+        return corrected
 
     def _try_thai_month_pattern(self, text: str) -> Optional[date]:
         """

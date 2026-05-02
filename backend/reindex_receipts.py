@@ -25,7 +25,7 @@ def main():
     try:
         # Get all receipts with actual data
         query = text("""
-            SELECT id, filename, sender, receiver, amount, extracted_date, note
+            SELECT id, filename, sender, receiver, amount, extracted_date, note, transaction_type
             FROM receipts
             WHERE sender IS NOT NULL
                OR receiver IS NOT NULL
@@ -60,14 +60,15 @@ def main():
         # Index each receipt
         success_count = 0
         for receipt in receipts:
-            receipt_id, filename, sender, receiver, amount, extracted_date, note = receipt
+            receipt_id, filename, sender, receiver, amount, extracted_date, note, transaction_type = receipt
 
             receipt_data = {
                 'extracted_date': extracted_date.isoformat() if extracted_date else None,
                 'sender': sender,
                 'receiver': receiver,
                 'amount': float(amount) if amount else None,
-                'note': note
+                'note': note,
+                'transaction_type': transaction_type  # Add transaction type
             }
 
             try:

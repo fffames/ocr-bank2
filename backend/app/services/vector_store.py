@@ -27,6 +27,16 @@ class VectorStore:
         """Create searchable text from receipt data."""
         parts = []
 
+        # Add transaction type first (most important for LLM understanding)
+        if receipt.get('transaction_type'):
+            trans_type = receipt['transaction_type']
+            if trans_type == 'sending':
+                parts.append("Transaction type: Sending money (payment/expense)")
+            elif trans_type == 'receiving':
+                parts.append("Transaction type: Receiving money (income)")
+            else:
+                parts.append(f"Transaction type: {trans_type}")
+
         if receipt.get('extracted_date'):
             parts.append(f"Date: {receipt['extracted_date']}")
 
@@ -85,6 +95,7 @@ class VectorStore:
                     "amount": str(receipt_data.get('amount', 0)),
                     "sender": str(receipt_data.get('sender', '')),
                     "receiver": str(receipt_data.get('receiver', '')),
+                    "transaction_type": str(receipt_data.get('transaction_type', 'unknown')),
                 }]
             )
             print(f"✅ Successfully indexed receipt {receipt_id}")

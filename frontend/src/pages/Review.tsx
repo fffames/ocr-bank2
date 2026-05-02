@@ -145,9 +145,13 @@ export default function ReviewPage() {
           <h2 className="text-xl font-semibold mb-4">Original Image</h2>
           <div className="bg-gray-100 rounded-lg overflow-hidden">
             <img
-              src={`http://localhost:8000${currentReceipt.image_path}`}
+              src={`http://localhost:8000${currentReceipt.image_path.replace('./backend/images', '/images')}`}
               alt={currentReceipt.filename}
               className="w-full h-auto"
+              onError={(e) => {
+                console.error('Failed to load image:', currentReceipt.image_path);
+                (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3EImage not found%3C/text%3E%3C/svg%3E';
+              }}
             />
           </div>
           <div className="mt-4 flex items-center justify-between">
