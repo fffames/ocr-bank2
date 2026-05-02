@@ -11,6 +11,9 @@ export interface Receipt {
   note?: string;
   confidence_score?: number | string; // API can return either number or string
   status: 'pending' | 'reviewed' | 'confirmed';
+  transaction_type?: 'sending' | 'receiving' | 'unknown';
+  transaction_confidence?: 'high' | 'medium' | 'low';
+  classification_reason?: string;
   created_at: string;
   updated_at: string;
 }
@@ -23,6 +26,7 @@ export interface ReceiptUpdate {
   amount?: number | string;
   note?: string;
   status?: 'pending' | 'reviewed' | 'confirmed';
+  transaction_type?: 'sending' | 'receiving' | 'unknown';
 }
 
 export interface ChatMessage {

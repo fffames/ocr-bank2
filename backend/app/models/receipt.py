@@ -18,6 +18,9 @@ class Receipt(Base):
     note = Column(Text)
     confidence_score = Column(DECIMAL(5, 4))
     status = Column(String(50), default="pending")  # pending, reviewed, confirmed
+    transaction_type = Column(String(20), nullable=True)  # "sending", "receiving", "unknown"
+    transaction_confidence = Column(String(10), nullable=True)  # "high", "medium", "low"
+    classification_reason = Column(Text, nullable=True)  # Why classified this way
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 

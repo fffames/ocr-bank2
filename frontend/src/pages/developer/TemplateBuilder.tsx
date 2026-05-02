@@ -61,6 +61,11 @@ export default function TemplateBuilder() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
+  // Logo cropping state
+  const [mode, setMode] = useState<'zones' | 'logo'>('zones');
+  const [logoCrop, setLogoCrop] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+
   // Handle image upload
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -99,6 +104,14 @@ export default function TemplateBuilder() {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
+    if (mode === 'logo') {
+      // Logo cropping mode - start drawing logo crop
+      setIsDrawing(true);
+      setDrawStart({ x, y });
+      setLogoCrop(null);
+      return;
+    }
+
     // Check if clicking on existing zone
     const clickedZone = zones.find(zone => {
       const zoneX = percentToPixels(zone.xPercent, rect.width);
@@ -122,7 +135,7 @@ export default function TemplateBuilder() {
       setDrawStart({ x, y });
       setSelectedZoneId(null);
     }
-  }, [zones, imageSrc, percentToPixels]);
+  }, [zones, imageSrc, percentToPixels, mode]);
 
   // Handle mouse move for drawing/dragging
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -132,6 +145,17 @@ export default function TemplateBuilder() {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+
+    if (mode === 'logo' && isDrawing) {
+      // Logo cropping mode - update logo crop rectangle
+      const cropX = Math.min(drawStart.x, x);
+      const cropY = Math.min(drawStart.y, y);
+      const cropWidth = Math.abs(x - drawStart.x);
+      const cropHeight = Math.abs(y - drawStart.y);
+
+      setLogoCrop({ x: cropX, y: cropY, width: cropWidth, height: cropHeight });
+      return;
+    }
 
     if (isDragging && selectedZoneId) {
       // Dragging existing zone
@@ -146,7 +170,7 @@ export default function TemplateBuilder() {
         return zone;
       }));
     }
-  }, [isDragging, selectedZoneId, imageSrc, pixelsToPercent, dragOffset]);
+  }, [isDragging, selectedZoneId, imageSrc, pixelsToPercent, dragOffset, mode, isDrawing, drawStart]);
 
   // Handle mouse up to finish drawing/dragging
   const handleCanvasMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -156,6 +180,23 @@ export default function TemplateBuilder() {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+
+    if (mode === 'logo' && isDrawing) {
+      // Logo cropping mode - finalize logo crop
+      const cropX = Math.min(drawStart.x, x);
+      const cropY = Math.min(drawStart.y, y);
+      const cropWidth = Math.abs(x - drawStart.x);
+      const cropHeight = Math.abs(y - drawStart.y);
+
+      // Only set logo crop if it's big enough
+      if (cropWidth > 20 && cropHeight > 20) {
+        setLogoCrop({ x: cropX, y: cropY, width: cropWidth, height: cropHeight });
+      } else {
+        setLogoCrop(null);
+      }
+      setIsDrawing(false);
+      return;
+    }
 
     if (isDrawing) {
       // Finish drawing new zone
@@ -184,7 +225,7 @@ export default function TemplateBuilder() {
     }
 
     setIsDragging(false);
-  }, [isDrawing, drawStart, imageSrc, zones.length, pixelsToPercent]);
+  }, [isDrawing, drawStart, imageSrc, zones.length, pixelsToPercent, mode]);
 
   // Delete zone
   const deleteZone = useCallback((zoneId: string) => {
@@ -278,6 +319,75 @@ export default function TemplateBuilder() {
 
   const selectedZone = zones.find(z => z.id === selectedZoneId);
 
+  // Handle logo upload
+  const handleUploadLogo = async () => {
+    if (!logoCrop || !imageSrc || !template.templateId) {
+      alert('Please set template ID and crop a logo region first');
+      return;
+    }
+
+    setIsUploadingLogo(true);
+
+    try {
+      // Create canvas to crop the logo
+      const canvas = document.createElement('canvas');
+      const img = imageRef.current;
+      if (!img) throw new Error('Image not loaded');
+
+      // Calculate crop coordinates in actual image dimensions
+      const scaleX = img.naturalWidth / img.width;
+      const scaleY = img.naturalHeight / img.height;
+
+      const cropX = logoCrop.x * scaleX;
+      const cropY = logoCrop.y * scaleY;
+      const cropWidth = logoCrop.width * scaleX;
+      const cropHeight = logoCrop.height * scaleY;
+
+      canvas.width = cropWidth;
+      canvas.height = cropHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Failed to get canvas context');
+
+      // Crop the logo region
+      ctx.drawImage(
+        img,
+        cropX, cropY, cropWidth, cropHeight,
+        0, 0, cropWidth, cropHeight
+      );
+
+      // Convert to blob
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          setIsUploadingLogo(false);
+          throw new Error('Failed to create blob');
+        }
+
+        const formData = new FormData();
+        formData.append('template_id', template.templateId);
+        formData.append('logo_image', blob, 'logo.png');
+
+        const response = await fetch('http://localhost:8000/api/templates/upload-logo', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          setIsUploadingLogo(false);
+          throw new Error(error.detail || 'Upload failed');
+        }
+
+        const result = await response.json();
+        alert(`✅ Logo uploaded successfully!\n\nSaved to: ${result.logo_path}`);
+        setIsUploadingLogo(false);
+      }, 'image/png');
+    } catch (error: any) {
+      alert(`❌ Logo upload failed: ${error.message}`);
+      setIsUploadingLogo(false);
+    }
+  };
+
   return (
     <div className="dev-mode dev-grid-bg min-h-screen">
       {/* Header */}
@@ -367,18 +477,70 @@ export default function TemplateBuilder() {
             {/* Canvas */}
             <div className="dev-card p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-[var(--dev-text-primary)]">Receipt Image</h2>
-                <label className="dev-btn-secondary flex items-center gap-2 cursor-pointer">
-                  <Upload className="w-4 h-4" />
-                  Upload Image
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
+                <div className="flex items-center gap-4">
+                  <h2 className="text-lg font-semibold text-[var(--dev-text-primary)]">Receipt Image</h2>
+                  {imageSrc && (
+                    <div className="flex items-center gap-2 bg-[var(--dev-bg-tertiary)] rounded-lg p-1">
+                      <button
+                        onClick={() => setMode('zones')}
+                        className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                          mode === 'zones'
+                            ? 'bg-[var(--dev-accent)] text-[var(--dev-bg-primary)]'
+                            : 'text-[var(--dev-text-secondary)] hover:text-[var(--dev-text-primary)]'
+                        }`}
+                      >
+                        Zones
+                      </button>
+                      <button
+                        onClick={() => setMode('logo')}
+                        className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                          mode === 'logo'
+                            ? 'bg-[var(--dev-accent)] text-[var(--dev-bg-primary)]'
+                            : 'text-[var(--dev-text-secondary)] hover:text-[var(--dev-text-primary)]'
+                        }`}
+                      >
+                        Logo
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {mode === 'logo' && logoCrop && (
+                    <button
+                      onClick={handleUploadLogo}
+                      disabled={isUploadingLogo || !template.templateId}
+                      className="dev-btn flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {isUploadingLogo ? 'Uploading...' : 'Upload Logo'}
+                    </button>
+                  )}
+                  <label className="dev-btn-secondary flex items-center gap-2 cursor-pointer">
+                    <Upload className="w-4 h-4" />
+                    Upload Image
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               </div>
+
+              {/* Mode-specific instructions */}
+              {mode === 'logo' && imageSrc && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+                  <div className="text-green-600 mt-0.5">📌</div>
+                  <div className="text-sm text-green-800">
+                    <strong>Logo Cropping Mode:</strong>
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      <li>Draw a rectangle around the bank logo</li>
+                      <li>Click "Upload Logo" to save it</li>
+                      <li>Saved to: <code>app/templates/logos/{template.templateId || 'TEMPLATE_ID'}.png</code></li>
+                    </ul>
+                  </div>
+                </div>
+              )}
 
               {imageSrc ? (
                 <div className="dev-canvas-container" ref={canvasRef}>
@@ -396,7 +558,32 @@ export default function TemplateBuilder() {
                     className="absolute inset-0 w-full h-full pointer-events-none"
                     style={{ zIndex: 10 }}
                   >
-                    {zones.map(zone => {
+                    {/* Logo Crop Rectangle */}
+                    {mode === 'logo' && logoCrop && (
+                      <g>
+                        <rect
+                          x={logoCrop.x}
+                          y={logoCrop.y}
+                          width={logoCrop.width}
+                          height={logoCrop.height}
+                          fill="rgba(0, 255, 0, 0.2)"
+                          stroke="#00ff00"
+                          strokeWidth="2"
+                          strokeDasharray="5,5"
+                        />
+                        <text
+                          x={logoCrop.x + 5}
+                          y={logoCrop.y + 15}
+                          fill="#00ff00"
+                          fontSize="12"
+                          fontWeight="600"
+                        >
+                          LOGO
+                        </text>
+                      </g>
+                    )}
+
+                    {mode === 'zones' && zones.map(zone => {
                       const container = canvasRef.current;
                       if (!container) return null;
 
@@ -445,8 +632,8 @@ export default function TemplateBuilder() {
                       );
                     })}
 
-                    {/* Drawing preview */}
-                    {isDrawing && (
+                    {/* Drawing preview for zones */}
+                    {mode === 'zones' && isDrawing && (
                       <rect
                         x={Math.min(drawStart.x, drawStart.x)}
                         y={Math.min(drawStart.y, drawStart.y)}

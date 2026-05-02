@@ -57,11 +57,12 @@ async def health_check():
 
 
 # Import routers
-from app.api import upload, receipts, chat, templates
+from app.api import upload, receipts, chat, templates, user_settings
 
 app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
 app.include_router(receipts.router, prefix="/api/receipts", tags=["receipts"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(templates.router, prefix="/api", tags=["templates"])
+app.include_router(user_settings.router, prefix="/api/user", tags=["user_settings"])
 # app.include_router(export.router, prefix="/api/export", tags=["export"])
 # app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])

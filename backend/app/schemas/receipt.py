@@ -14,6 +14,9 @@ class ReceiptBase(BaseModel):
     note: Optional[str] = None
     confidence_score: Optional[Decimal] = None
     status: str = "pending"
+    transaction_type: Optional[str] = None
+    transaction_confidence: Optional[str] = None
+    classification_reason: Optional[str] = None
 
 
 class ReceiptCreate(ReceiptBase):
@@ -29,6 +32,7 @@ class ReceiptUpdate(BaseModel):
     amount: Optional[Decimal] = None
     note: Optional[str] = None
     status: Optional[str] = None
+    transaction_type: Optional[str] = None
 
 
 class ReceiptResponse(ReceiptBase):

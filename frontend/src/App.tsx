@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Upload, FileText, MessageSquare, BarChart3, Home, Code2, User, Grid3x3 } from 'lucide-react';
+import { Upload, FileText, MessageSquare, BarChart3, Home, Code2, User, Grid3x3, Settings as SettingsIcon } from 'lucide-react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import UploadPage from './pages/Upload';
 import ReviewPage from './pages/Review';
 import ReceiptsListPage from './pages/ReceiptsList';
 import ReceiptsListDebugPage from './pages/ReceiptsListDebug';
 import ChatPage from './pages/Chat';
+import SettingsPage from './pages/Settings';
 import TemplateBuilder from './pages/developer/TemplateBuilder';
 import TemplateManagement from './pages/developer/TemplateManagement';
 import { receiptService } from './services/receiptService';
@@ -52,6 +53,9 @@ function UserModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'develope
               <NavLink to="/receipts" icon={<FileText size={20} />}>
                 Receipts
               </NavLink>
+              <NavLink to="/settings" icon={<SettingsIcon size={20} />}>
+                Settings
+              </NavLink>
               <NavLink to="/chat" icon={<MessageSquare size={20} />}>
                 Chat
               </NavLink>
@@ -78,6 +82,7 @@ function UserModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'develope
           <Route path="/review" element={<ReviewPage />} />
           <Route path="/receipts" element={<ReceiptsListPage />} />
           <Route path="/receipts-debug" element={<ReceiptsListDebugPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
         </Routes>

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import os
 import uuid
+import json
 from datetime import datetime
 import aiofiles
 
@@ -146,6 +147,52 @@ async def upload_images(
             db.add(receipt)
             db.commit()
             db.refresh(receipt)
+
+            # Classify transaction using extracted data from database
+            try:
+                from app.services.transaction_classifier import TransactionClassifier
+                from app.models.user_settings import UserSettings
+
+                # Get user settings
+                user_settings = db.query(UserSettings).first()
+
+                if (user_settings and user_settings.auto_classify and user_settings.user_name):
+                    # Run classifier (reads sender/receiver from database)
+                    classifier = TransactionClassifier()
+
+                    # Parse name variations
+                    try:
+                        name_variations = json.loads(user_settings.user_name_variations) if user_settings.user_name_variations else []
+                    except:
+                        name_variations = []
+
+                    classification = classifier.classify(
+                        sender=receipt.sender,  # Read from database (already extracted)
+                        receiver=receipt.receiver,  # Read from database (already extracted)
+                        user_name=user_settings.user_name,
+                        name_variations=name_variations
+                    )
+
+                    # Update receipt record with classification
+                    receipt.transaction_type = classification["transaction_type"]
+                    receipt.transaction_confidence = classification["confidence"]
+                    receipt.classification_reason = classification["reason"]
+
+                    db.commit()  # Save classification to database
+                    db.refresh(receipt)
+
+                    print(f"  ✅ Classified as: {classification['transaction_type']} ({classification['confidence']})")
+                else:
+                    print("  ⚠️  No user name set or auto-classify disabled, skipping classification")
+                    receipt.transaction_type = "unknown"
+                    receipt.transaction_confidence = "low"
+                    db.commit()
+
+            except Exception as classify_error:
+                print(f"  ⚠️  Classification failed: {classify_error}")
+                receipt.transaction_type = "unknown"
+                receipt.transaction_confidence = "low"
+                db.commit()
 
             # Auto-index in vector store for RAG chat
             try:

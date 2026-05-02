@@ -177,29 +177,29 @@ class TemplateManager:
         # Run all 5 detection methods in parallel (conceptually - sequential in Python)
         method_results = {}
 
-        # Method 1: Logo Template Matching (35% weight)
+        # Method 1: Logo Template Matching (60% weight - increased for better matching)
         logo_scores = self._match_logos_multiscale(gray, width, height)
-        method_results['logo'] = (logo_scores, 0.35)
+        method_results['logo'] = (logo_scores, 0.60)  # Increased from 0.35
         logger.info(f"Logo matching scores: {logo_scores}")
 
-        # Method 2: Enhanced Layout Analysis (25% weight)
+        # Method 2: Enhanced Layout Analysis (15% weight - decreased)
         layout_scores = self._analyze_layout_enhanced(image, gray, width, height)
-        method_results['layout'] = (layout_scores, 0.25)
+        method_results['layout'] = (layout_scores, 0.15)  # Decreased from 0.25
         logger.info(f"Enhanced layout scores: {layout_scores}")
 
-        # Method 3: Color Histogram Matching (15% weight)
+        # Method 3: Color Histogram Matching (10% weight - decreased)
         color_scores = self._match_colors(hsv, width, height)
-        method_results['color'] = (color_scores, 0.15)
+        method_results['color'] = (color_scores, 0.10)  # Decreased from 0.15
         logger.info(f"Color histogram scores: {color_scores}")
 
-        # Method 4: Icon/Feature Detection (15% weight)
+        # Method 4: Icon/Feature Detection (10% weight - decreased)
         icon_scores = self._match_icons(gray, width, height)
-        method_results['icon'] = (icon_scores, 0.15)
+        method_results['icon'] = (icon_scores, 0.10)  # Decreased from 0.15
         logger.info(f"Icon detection scores: {icon_scores}")
 
-        # Method 5: Spacing Pattern Analysis (10% weight)
+        # Method 5: Spacing Pattern Analysis (5% weight - decreased)
         spacing_scores = self._analyze_spacing(gray, width, height)
-        method_results['spacing'] = (spacing_scores, 0.10)
+        method_results['spacing'] = (spacing_scores, 0.05)  # Decreased from 0.10
         logger.info(f"Spacing analysis scores: {spacing_scores}")
 
         # Bayesian confidence fusion
@@ -211,7 +211,7 @@ class TemplateManager:
             best_score = final_scores[best_template_id]
             logger.info(f"✅ Best match: {best_template_id} (final confidence: {best_score:.3f})")
 
-            if best_score > 0.5:  # Minimum confidence threshold
+            if best_score > 0.2:  # Lowered threshold for better matching (was 0.5)
                 return best_template_id
             else:
                 logger.warning(f"Best match {best_template_id} has low confidence: {best_score:.3f}")

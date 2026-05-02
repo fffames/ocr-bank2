@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Save, CheckCircle, Edit2 } from 'lucide-react';
 import { Receipt, ReceiptUpdate } from '../types/receipt';
 import { receiptService } from '../services/receiptService';
 
 export default function ReviewPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [currentReceipt, setCurrentReceipt] = useState<Receipt | null>(null);
@@ -16,14 +15,8 @@ export default function ReviewPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
-    // Get receipts from navigation state or fetch from API
-    if (location.state?.receipts) {
-      setReceipts(location.state.receipts);
-      setCurrentReceipt(location.state.receipts[0]);
-    } else {
-      // If no receipts in state, fetch from API
-      fetchPendingReceipts();
-    }
+    // Always fetch fresh data from API to ensure we have latest transaction_type
+    fetchPendingReceipts();
   }, []);
 
   const fetchPendingReceipts = async () => {
@@ -71,6 +64,7 @@ export default function ReviewPage() {
       receiver: currentReceipt?.receiver || undefined,
       amount: currentReceipt?.amount || undefined,
       note: currentReceipt?.note || undefined,
+      transaction_type: currentReceipt?.transaction_type || undefined,
     });
     setIsEditing(true);
   };
@@ -292,6 +286,26 @@ export default function ReviewPage() {
                 placeholder="Additional notes"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Transaction Type
+              </label>
+              <select
+                value={editedData.transaction_type || currentReceipt.transaction_type || 'unknown'}
+                onChange={(e) => setEditedData({ ...editedData, transaction_type: e.target.value as 'sending' | 'receiving' | 'unknown' })}
+                disabled={!isEditing}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              >
+                <option value="sending">↑ Sending (Paying)</option>
+                <option value="receiving">↓ Receiving (Income)</option>
+                <option value="unknown">? Unknown</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                {currentReceipt.transaction_confidence && `Confidence: ${currentReceipt.transaction_confidence}`}
+                {currentReceipt.classification_reason && ` - ${currentReceipt.classification_reason}`}
+              </p>
             </div>
 
             {/* Action Buttons */}

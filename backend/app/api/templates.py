@@ -1,5 +1,5 @@
 """Template CRUD API endpoints."""
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel, field_validator, ValidationError
 from typing import List, Optional
 import yaml
@@ -295,3 +295,59 @@ async def test_zone_ocr(request: dict):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"OCR test failed: {str(e)}")
+
+
+@router.post("/templates/upload-logo")
+async def upload_logo(
+    template_id: str = Form(...),
+    logo_image: UploadFile = File(...)
+):
+    """
+    Upload and save a logo for a template.
+
+    Args:
+        template_id: Template identifier (bank name)
+        logo_image: Logo image file
+
+    Returns:
+        Success message with logo path
+    """
+    from fastapi import Form
+    from PIL import Image
+    import io
+
+    try:
+        # Create logos directory if it doesn't exist
+        logos_dir = TEMPLATES_DIR / "logos"
+        logos_dir.mkdir(exist_ok=True)
+
+        # Validate template_id
+        if not template_id or not template_id.strip():
+            raise HTTPException(status_code=400, detail="template_id is required")
+
+        # Sanitize template_id (prevent path traversal)
+        template_id = template_id.replace('/', '').replace('\\', '').replace('..', '')
+
+        # Read and validate image
+        contents = await logo_image.read()
+        image = Image.open(io.BytesIO(contents))
+
+        # Convert to RGB if necessary
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+
+        # Save logo
+        logo_path = logos_dir / f"{template_id}.png"
+        image.save(logo_path, 'PNG')
+
+        logger.info(f"Logo saved: {logo_path}")
+
+        return {
+            "message": "Logo uploaded successfully",
+            "template_id": template_id,
+            "logo_path": f"logos/{template_id}.png"
+        }
+
+    except Exception as e:
+        logger.error(f"Error uploading logo: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to upload logo: {str(e)}")

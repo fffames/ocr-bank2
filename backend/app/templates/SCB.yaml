@@ -3,10 +3,10 @@ description: ไทยพาณิชย์
 detection:
   primary_method: logo
   logo_region:
-    x_percent: 75
-    y_percent: 2
-    width_percent: 25
-    height_percent: 12
+    x_percent: 65
+    y_percent: 1
+    width_percent: 35
+    height_percent: 15
   logo_template:
     path: "logos/SCB.png"
     method: "match_template"

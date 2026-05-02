@@ -139,6 +139,9 @@ export default function ReceiptsListPage() {
                     Amount
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -175,6 +178,21 @@ export default function ReceiptsListPage() {
                         </div>
                       ) : (
                         '-'
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {receipt.transaction_type && (
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
+                          receipt.transaction_type === 'receiving'
+                            ? 'bg-green-100 text-green-800'
+                            : receipt.transaction_type === 'sending'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {receipt.transaction_type === 'receiving' && '↓ Receiving'}
+                          {receipt.transaction_type === 'sending' && '↑ Sending'}
+                          {receipt.transaction_type === 'unknown' && '? Unknown'}
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
