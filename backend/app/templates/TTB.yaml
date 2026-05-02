@@ -1,0 +1,53 @@
+bank_name: TTB
+description: ไทยธนชาต
+detection:
+  keywords:
+  - ไทยธนชาต
+  - TTB
+  primary_method: keywords
+image_size:
+- 828
+- 1408
+template_id: TTB
+version: '1.0'
+zones:
+  amount:
+    height_percent: 5.018457306922093
+    parser: thai_amount
+    preprocessor: grayscale
+    required: false
+    width_percent: 35.37142038359978
+    x_percent: 33.53734673407979
+    y_percent: 35.5152363259102
+  date:
+    height_percent: 2.62503920669771
+    parser: thai_date
+    preprocessor: grayscale
+    required: false
+    width_percent: 16.506662845679898
+    x_percent: 34.716394080199784
+    y_percent: 30.80560716095254
+  receiver_name:
+    height_percent: 3.783144739064347
+    parser: text
+    preprocessor: grayscale
+    required: false
+    width_percent: 40.08760976807975
+    x_percent: 17.42369967043989
+    y_percent: 60.9163510024851
+  sender_name:
+    height_percent: 4.246386952011002
+    parser: text
+    preprocessor: grayscale
+    required: false
+    width_percent: 41.79067815691974
+    x_percent: 17.030683888399896
+    y_percent: 46.32422129466548
+  time:
+    height_percent: 2.8566603131710377
+    parser: time
+    preprocessor: grayscale
+    required: false
+    width_percent: 11.790473461199927
+    x_percent: 52.14009375063967
+    y_percent: 30.844210678698097

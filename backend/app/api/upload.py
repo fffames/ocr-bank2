@@ -147,6 +147,28 @@ async def upload_images(
             db.commit()
             db.refresh(receipt)
 
+            # Auto-index in vector store for RAG chat
+            try:
+                from app.services.vector_store import get_vector_store
+                vector_store = get_vector_store()
+
+                # Only index if receipt has actual data
+                if receipt.sender or receipt.receiver or receipt.amount:
+                    receipt_data = {
+                        'extracted_date': receipt.extracted_date.isoformat() if receipt.extracted_date else None,
+                        'sender': receipt.sender,
+                        'receiver': receipt.receiver,
+                        'amount': float(receipt.amount) if receipt.amount else None,
+                        'note': receipt.note
+                    }
+                    vector_store.index_receipt(receipt.id, receipt_data)
+                    print(f"  ✅ Auto-indexed receipt {receipt.id} in vector store")
+                else:
+                    print(f"  ⚠️  Receipt {receipt.id} has no extracted data, skipping index")
+            except Exception as index_error:
+                print(f"  ⚠️  Failed to auto-index receipt: {index_error}")
+                # Don't fail the upload if indexing fails
+
             # Add to processed receipts
             receipt_data = {
                 "id": receipt.id,
@@ -224,6 +246,28 @@ async def process_ocr_for_receipt(
 
         db.commit()
         db.refresh(receipt)
+
+        # Auto-index in vector store for RAG chat
+        try:
+            from app.services.vector_store import get_vector_store
+            vector_store = get_vector_store()
+
+            # Only index if receipt has actual data
+            if receipt.sender or receipt.receiver or receipt.amount:
+                receipt_data = {
+                    'extracted_date': receipt.extracted_date.isoformat() if receipt.extracted_date else None,
+                    'sender': receipt.sender,
+                    'receiver': receipt.receiver,
+                    'amount': float(receipt.amount) if receipt.amount else None,
+                    'note': receipt.note
+                }
+                vector_store.index_receipt(receipt.id, receipt_data)
+                print(f"  ✅ Auto-indexed receipt {receipt.id} in vector store")
+            else:
+                print(f"  ⚠️  Receipt {receipt.id} has no extracted data, skipping index")
+        except Exception as index_error:
+            print(f"  ⚠️  Failed to auto-index receipt: {index_error}")
+            # Don't fail the upload if indexing fails
 
         return {
             "id": receipt.id,

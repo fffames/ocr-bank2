@@ -2,13 +2,21 @@ bank_name: K+
 description: กสิกร
 detection:
   primary_method: logo
-  keywords:
-  - K+
   logo_region:
     x_percent: 75
     y_percent: 2
     width_percent: 20
     height_percent: 12
+  logo_template:
+    path: "logos/Kasikorn.png"
+    method: "match_template"
+    match_threshold: 0.75
+    scales: [0.8, 0.9, 1.0, 1.1, 1.2]
+  keywords:
+  - K+
+  - กสิกรไทย
+  - เคพลัส
+  - K Plus
 image_size:
 - 990
 - 1409

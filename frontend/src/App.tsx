@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Upload, FileText, MessageSquare, BarChart3, Home, Code2, User, Grid3x3 } from 'lucide-react';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -9,6 +9,7 @@ import ReceiptsListDebugPage from './pages/ReceiptsListDebug';
 import ChatPage from './pages/Chat';
 import TemplateBuilder from './pages/developer/TemplateBuilder';
 import TemplateManagement from './pages/developer/TemplateManagement';
+import { receiptService } from './services/receiptService';
 import './styles/developer.css';
 
 function App() {
@@ -163,21 +164,67 @@ function DevNavLink({ to, children, icon }: { to: string; children: React.ReactN
 
 // Placeholder pages
 function Dashboard() {
+  const [stats, setStats] = useState({
+    total_receipts: 0,
+    total_amount: 0,
+    pending_count: 0,
+    reviewed_count: 0,
+    confirmed_count: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const data = await receiptService.getStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Receipts</h3>
-          <p className="text-3xl font-bold text-blue-600">0</p>
+          <p className="text-3xl font-bold text-blue-600">
+            {loading ? '...' : stats.total_receipts}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Amount</h3>
-          <p className="text-3xl font-bold text-green-600">฿0.00</p>
+          <p className="text-3xl font-bold text-green-600">
+            {loading ? '...' : `฿${stats.total_amount.toFixed(2)}`}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Pending Review</h3>
-          <p className="text-3xl font-bold text-yellow-600">0</p>
+          <p className="text-3xl font-bold text-yellow-600">
+            {loading ? '...' : stats.pending_count}
+          </p>
+        </div>
+      </div>
+
+      {/* Additional Stats */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Reviewed</h3>
+          <p className="text-2xl font-bold text-blue-600">
+            {loading ? '...' : stats.reviewed_count}
+          </p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Confirmed</h3>
+          <p className="text-2xl font-bold text-green-600">
+            {loading ? '...' : stats.confirmed_count}
+          </p>
         </div>
       </div>
     </div>
