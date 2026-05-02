@@ -26,6 +26,7 @@ class TemplateManager:
         self.templates_dir = Path(templates_dir)
         self.templates = self._load_templates()
         self.logo_templates = {}  # Cache for logo templates
+        self.header_templates = {}  # Cache for full header templates (NEW!)
         self.color_profiles = {}  # Cache for color histograms
         self.icon_templates = {}  # Cache for SIFT/ORB descriptors
         self.spacing_profiles = {}  # Cache for spacing profiles
@@ -77,6 +78,18 @@ class TemplateManager:
                         logger.info(f"Loaded logo template: {template_id}")
                 except Exception as e:
                     logger.error(f"Error loading logo template {logo_file}: {e}")
+
+        # Load full header templates for improved matching
+        if logos_dir.exists():
+            for header_file in logos_dir.glob("*_header.png"):
+                template_id = header_file.stem.replace('_header', '')  # Remove _header suffix
+                try:
+                    header_img = cv2.imread(str(header_file), cv2.IMREAD_COLOR)
+                    if header_img is not None:
+                        self.header_templates[template_id] = header_img
+                        logger.info(f"Loaded header template: {template_id} (size: {header_img.shape})")
+                except Exception as e:
+                    logger.error(f"Error loading header template {header_file}: {e}")
 
         # Load icon templates for SIFT/ORB feature matching
         if icons_dir.exists():
@@ -177,29 +190,31 @@ class TemplateManager:
         # Run all 5 detection methods in parallel (conceptually - sequential in Python)
         method_results = {}
 
-        # Method 1: Logo Template Matching (60% weight - increased for better matching)
+        # Method 1: Header Template Matching (70% weight - PRIMARY METHOD)
+        # Compares full header sections instead of just logos
+        header_scores = self._match_headers_multiscale(image, width, height)
+        method_results['header'] = (header_scores, 0.70)  # Header matching is king!
+        logger.info(f"🎯 Header matching scores: {header_scores}")
+
+        # Method 2: Logo Template Matching (10% weight - fallback)
+        # Used as secondary method if header templates don't exist
         logo_scores = self._match_logos_multiscale(gray, width, height)
-        method_results['logo'] = (logo_scores, 0.60)  # Increased from 0.35
+        method_results['logo'] = (logo_scores, 0.10)
         logger.info(f"Logo matching scores: {logo_scores}")
 
-        # Method 2: Enhanced Layout Analysis (15% weight - decreased)
+        # Method 3: Enhanced Layout Analysis (10% weight)
         layout_scores = self._analyze_layout_enhanced(image, gray, width, height)
-        method_results['layout'] = (layout_scores, 0.15)  # Decreased from 0.25
+        method_results['layout'] = (layout_scores, 0.10)
         logger.info(f"Enhanced layout scores: {layout_scores}")
 
-        # Method 3: Color Histogram Matching (10% weight - decreased)
+        # Method 4: Color Histogram Matching (5% weight)
         color_scores = self._match_colors(hsv, width, height)
-        method_results['color'] = (color_scores, 0.10)  # Decreased from 0.15
+        method_results['color'] = (color_scores, 0.05)
         logger.info(f"Color histogram scores: {color_scores}")
 
-        # Method 4: Icon/Feature Detection (10% weight - decreased)
-        icon_scores = self._match_icons(gray, width, height)
-        method_results['icon'] = (icon_scores, 0.10)  # Decreased from 0.15
-        logger.info(f"Icon detection scores: {icon_scores}")
-
-        # Method 5: Spacing Pattern Analysis (5% weight - decreased)
+        # Method 5: Spacing Pattern Analysis (5% weight)
         spacing_scores = self._analyze_spacing(gray, width, height)
-        method_results['spacing'] = (spacing_scores, 0.05)  # Decreased from 0.10
+        method_results['spacing'] = (spacing_scores, 0.05)
         logger.info(f"Spacing analysis scores: {spacing_scores}")
 
         # Bayesian confidence fusion
@@ -846,6 +861,75 @@ class TemplateManager:
             return score / weights
         return 0.0
 
+    def _match_headers_multiscale(self, uploaded_image: np.ndarray, width: int, height: int) -> Dict[str, float]:
+        """
+        Match receipt headers using full template images instead of just logos.
+        This compares the top portion (header) of the uploaded image with header templates.
+
+        Args:
+            uploaded_image: Full uploaded receipt image (BGR)
+            width: Image width
+            height: Image height
+
+        Returns:
+            Dictionary mapping template_id to confidence score (0.0 to 1.0)
+        """
+        scores = {}
+
+        # Extract header from uploaded image (top 25%)
+        header_height = int(height * 0.25)
+        if header_height < 50:
+            header_height = int(height * 0.30)  # Use 30% for small images
+
+        uploaded_header = uploaded_image[0:header_height, :]
+        uploaded_header_gray = cv2.cvtColor(uploaded_header, cv2.COLOR_BGR2GRAY)
+
+        # Try different scales to handle size variations (resize TEMPLATE, not uploaded image)
+        scales = [0.85, 0.925, 1.0, 1.075, 1.15]
+
+        for template_id in self.templates.keys():
+            # Check if this template has a full header image
+            if template_id not in self.header_templates:
+                continue
+
+            template_header = self.header_templates[template_id]
+            template_header_gray = cv2.cvtColor(template_header, cv2.COLOR_BGR2GRAY)
+
+            best_match_score = 0.0
+
+            for scale in scales:
+                try:
+                    # Scale the TEMPLATE to match uploaded header dimensions
+                    # (not the other way around!)
+                    scaled_template_width = int(template_header_gray.shape[1] * scale)
+                    scaled_template_height = int(template_header_gray.shape[0] * scale)
+
+                    if scaled_template_width <= 0 or scaled_template_height <= 0:
+                        continue
+
+                    # Ensure scaled template is smaller than or equal to uploaded header
+                    if (scaled_template_width > uploaded_header_gray.shape[1] or
+                        scaled_template_height > uploaded_header_gray.shape[0]):
+                        continue
+
+                    # Resize template to scaled dimensions
+                    scaled_template = cv2.resize(template_header_gray, (scaled_template_width, scaled_template_height),
+                                                 interpolation=cv2.INTER_AREA)
+
+                    # Perform template matching (uploaded header contains the scaled template)
+                    result = cv2.matchTemplate(uploaded_header_gray, scaled_template, cv2.TM_CCOEFF_NORMED)
+                    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+
+                    best_match_score = max(best_match_score, max_val)
+
+                except Exception as e:
+                    logger.debug(f"Error at scale {scale} for {template_id} header matching: {e}")
+                    continue
+
+            scores[template_id] = best_match_score
+
+        return scores
+
     def _fuse_confidences(self, method_results: Dict[str, Tuple[Dict[str, float], float]]) -> Dict[str, float]:
         """
         Fuse confidence scores from all detection methods using Bayesian scoring.
@@ -869,9 +953,11 @@ class TemplateManager:
                 # Get score for this template from this method
                 method_score = scores_dict.get(template_id, 0.0)
 
-                # Apply prior confidence (templates with logo templates get higher prior)
+                # Apply prior confidence (header templates get HIGHEST priority)
                 prior_confidence = 1.0
-                if method_name == 'logo' and template_id in self.logo_templates:
+                if method_name == 'header' and template_id in self.header_templates:
+                    prior_confidence = 1.5  # MAXIMUM boost for header templates (most reliable!)
+                elif method_name == 'logo' and template_id in self.logo_templates:
                     prior_confidence = 1.2  # Boost confidence for templates with real logos
                 elif method_name == 'icon' and template_id in self.icon_templates:
                     prior_confidence = 1.1  # Boost for templates with icon templates

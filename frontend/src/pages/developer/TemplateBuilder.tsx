@@ -364,7 +364,7 @@ export default function TemplateBuilder() {
         }
 
         const formData = new FormData();
-        formData.append('template_id', template.templateId);
+        formData.append('template_id', template.templateId || 'unknown');
         formData.append('logo_image', blob, 'logo.png');
 
         const response = await fetch('http://localhost:8000/api/templates/upload-logo', {
@@ -385,6 +385,66 @@ export default function TemplateBuilder() {
     } catch (error: any) {
       alert(`❌ Logo upload failed: ${error.message}`);
       setIsUploadingLogo(false);
+    }
+  };
+
+  const handleSaveAsHeaderTemplate = async () => {
+    if (!imageSrc || !imageRef.current || !template.templateId) {
+      alert('Please upload an image and set template ID first');
+      return;
+    }
+
+    try {
+      // Get the image dimensions
+      const img = imageRef.current;
+      const naturalWidth = img.naturalWidth;
+      const naturalHeight = img.naturalHeight;
+
+      // Calculate header region (top 25% of FULL image, full width)
+      const headerHeight = Math.floor(naturalHeight * 0.25);
+      const headerWidth = naturalWidth;  // FULL WIDTH!
+
+      // Create canvas with EXACT header dimensions
+      const canvas = document.createElement('canvas');
+      canvas.width = headerWidth;
+      canvas.height = headerHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Failed to get canvas context');
+
+      // Extract the header region (top 25%, full width)
+      ctx.drawImage(
+        img,
+        0, 0, headerWidth, headerHeight,     // Source: top-left (0,0) to (width, 25% height)
+        0, 0, headerWidth, headerHeight      // Destination: full canvas
+      );
+
+      // Convert to blob for upload
+      canvas.toBlob(async (blob) => {
+        if (!blob) throw new Error('Failed to create blob');
+
+        const formData = new FormData();
+        formData.append('template_id', (template.templateId || 'unknown') + '_header');
+        formData.append('logo_image', blob, 'header.png');
+
+        const response = await fetch('http://localhost:8000/api/templates/upload-logo', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Upload failed');
+        }
+
+        await response.json();
+
+        // Show success with dimensions
+        alert(`✅ Header template saved!\n\nTemplate ID: ${template.templateId}\nHeader size: ${headerWidth}x${headerHeight}px\n\nThis captures the full width of your receipt header!\n\n🔄 Restart the backend to apply changes.`);
+
+      }, 'image/png');
+    } catch (error: any) {
+      alert(`❌ Failed to save header template: ${error.message}`);
     }
   };
 
@@ -514,6 +574,15 @@ export default function TemplateBuilder() {
                       {isUploadingLogo ? 'Uploading...' : 'Upload Logo'}
                     </button>
                   )}
+                  {imageSrc && template.templateId && (
+                    <button
+                      onClick={() => handleSaveAsHeaderTemplate()}
+                      className="dev-btn-secondary flex items-center gap-2"
+                      title="Save entire image as header template"
+                    >
+                      💾 Save as Header
+                    </button>
+                  )}
                   <label className="dev-btn-secondary flex items-center gap-2 cursor-pointer">
                     <Upload className="w-4 h-4" />
                     Upload Image
@@ -528,6 +597,24 @@ export default function TemplateBuilder() {
               </div>
 
               {/* Mode-specific instructions */}
+              {imageSrc && template.templateId && (
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
+                  <div className="text-blue-600 text-xl mt-0.5">🎯</div>
+                  <div className="text-sm text-blue-800 flex-1">
+                    <strong>💡 Quick Start - Create Header Template:</strong>
+                    <ul className="mt-2 space-y-1">
+                      <li>1. Make sure Template ID is set (e.g., "SCB")</li>
+                      <li>2. Upload a clear sample receipt image</li>
+                      <li>3. Click <strong>"💾 Save as Header"</strong> button above</li>
+                      <li>4. System automatically extracts top 25% as template</li>
+                    </ul>
+                    <p className="mt-2 text-xs text-blue-600">
+                      ⚡ Header templates are much more reliable than logo-only matching!
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {mode === 'logo' && imageSrc && (
                 <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
                   <div className="text-green-600 mt-0.5">📌</div>
