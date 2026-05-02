@@ -18,6 +18,7 @@ def list_receipts(
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     sender: Optional[str] = None,
+    transaction_type: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """
@@ -30,6 +31,7 @@ def list_receipts(
         date_from: Filter by date from (inclusive)
         date_to: Filter by date to (inclusive)
         sender: Filter by sender name
+        transaction_type: Filter by transaction type (sending, receiving, unknown)
         db: Database session
 
     Returns:
@@ -49,6 +51,9 @@ def list_receipts(
 
     if sender:
         query = query.filter(Receipt.sender.ilike(f"%{sender}%"))
+
+    if transaction_type:
+        query = query.filter(Receipt.transaction_type == transaction_type)
 
     # Order by most recent first
     query = query.order_by(Receipt.created_at.desc())

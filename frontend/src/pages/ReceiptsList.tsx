@@ -18,12 +18,15 @@ export default function ReceiptsListPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [yearFilter, setYearFilter] = useState<string>('all');
+  const [monthFilter, setMonthFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
 
   useEffect(() => {
     fetchReceipts();
-  }, [statusFilter]);
+  }, [statusFilter, yearFilter, monthFilter, typeFilter]);
 
   // Debug logging (without filteredReceipts to avoid initialization issues)
   useEffect(() => {
@@ -31,9 +34,12 @@ export default function ReceiptsListPage() {
       loading,
       receiptsCount: receipts.length,
       searchTerm,
-      statusFilter
+      statusFilter,
+      yearFilter,
+      monthFilter,
+      typeFilter
     });
-  }, [loading, receipts, searchTerm, statusFilter]);
+  }, [loading, receipts, searchTerm, statusFilter, yearFilter, monthFilter, typeFilter]);
 
   const fetchReceipts = async () => {
     setLoading(true);
@@ -42,9 +48,37 @@ export default function ReceiptsListPage() {
       const params: any = {
         limit: 100,
       };
+
       if (statusFilter !== 'all') {
         params.status = statusFilter;
       }
+
+      if (typeFilter !== 'all') {
+        params.transaction_type = typeFilter;
+      }
+
+      // Handle year/month filtering
+      if (yearFilter !== 'all' || monthFilter !== 'all') {
+        const year = yearFilter !== 'all' ? parseInt(yearFilter) : new Date().getFullYear();
+        const month = monthFilter !== 'all' ? parseInt(monthFilter) - 1 : 0; // JavaScript months are 0-indexed
+
+        if (monthFilter !== 'all') {
+          // Specific month: create date range for that month
+          const startDate = new Date(year, month, 1);
+          const endDate = new Date(year, month + 1, 0); // Last day of month
+
+          params.date_from = startDate.toISOString().split('T')[0];
+          params.date_to = endDate.toISOString().split('T')[0];
+        } else {
+          // Entire year
+          const startDate = new Date(year, 0, 1);
+          const endDate = new Date(year, 11, 31);
+
+          params.date_from = startDate.toISOString().split('T')[0];
+          params.date_to = endDate.toISOString().split('T')[0];
+        }
+      }
+
       const data = await receiptService.getReceipts(params);
       console.log('✅ Received receipts:', data);
       console.log('📊 Data type:', typeof data, 'Is array:', Array.isArray(data), 'Length:', data?.length);
@@ -175,6 +209,70 @@ export default function ReceiptsListPage() {
               <option value="reviewed">Reviewed</option>
               <option value="confirmed">Confirmed</option>
             </select>
+          </div>
+
+          {/* Additional Filters */}
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            {/* Year Filter */}
+            <select
+              value={yearFilter}
+              onChange={(e) => setYearFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Years</option>
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+              <option value="2023">2023</option>
+            </select>
+
+            {/* Month Filter */}
+            <select
+              value={monthFilter}
+              onChange={(e) => setMonthFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Months</option>
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+
+            {/* Transaction Type Filter */}
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Types</option>
+              <option value="sending">↑ Sending (Expenses)</option>
+              <option value="receiving">↓ Receiving (Income)</option>
+              <option value="unknown">? Unknown</option>
+            </select>
+
+            {/* Clear Filters Button */}
+            {(statusFilter !== 'all' || yearFilter !== 'all' || monthFilter !== 'all' || typeFilter !== 'all') && (
+              <button
+                onClick={() => {
+                  setStatusFilter('all');
+                  setYearFilter('all');
+                  setMonthFilter('all');
+                  setTypeFilter('all');
+                }}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+              >
+                Clear Filters
+              </button>
+            )}
           </div>
 
           {/* Export Buttons */}

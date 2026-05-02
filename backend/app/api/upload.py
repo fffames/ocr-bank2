@@ -10,6 +10,7 @@ import aiofiles
 
 from app.database.connection import get_db
 from app.models.receipt import Receipt
+from app.models.user_settings import UserSettings
 from app.services.vlm_service import get_vlm_service
 from app.services.lm_studio_vlm_service import get_lm_studio_vlm_service
 from app.services.template_ocr_service import get_template_ocr_service
@@ -128,6 +129,56 @@ async def upload_images(
 
             # Move file to permanent storage
             os.rename(upload_path, final_path)
+
+            # Apply LLM-based text cleaning using user's name from settings
+            try:
+                from app.services.text_cleaning_service import get_text_cleaning_service
+                from app.models.user_settings import UserSettings
+
+                # Get user settings for text cleaning
+                user_settings = db.query(UserSettings).first()
+
+                if user_settings and user_settings.user_name:
+                    # Parse name variations
+                    try:
+                        name_variations = json.loads(user_settings.user_name_variations) if user_settings.user_name_variations else []
+                    except:
+                        name_variations = []
+
+                    # Clean OCR-extracted data
+                    cleaner = get_text_cleaning_service()
+                    extracted_data = {
+                        "sender": ocr_result.get("sender", ""),
+                        "receiver": ocr_result.get("receiver", ""),
+                        "amount": str(ocr_result.get("amount", "")) if ocr_result.get("amount") else "",
+                        "note": ocr_result.get("note", ""),
+                        "extracted_date": ocr_result.get("extracted_date", ""),
+                        "extracted_time": ocr_result.get("extracted_time", "")
+                    }
+
+                    cleaned_data = cleaner.clean_extracted_data(
+                        extracted_data=extracted_data,
+                        user_name=user_settings.user_name,
+                        name_variations=name_variations
+                    )
+
+                    # Use cleaned data for database record
+                    ocr_result["sender"] = cleaned_data.get("sender", "")
+                    ocr_result["receiver"] = cleaned_data.get("receiver", "")
+                    ocr_result["amount"] = cleaned_data.get("amount", "")
+                    ocr_result["note"] = cleaned_data.get("note", "")
+                    if cleaned_data.get("extracted_date"):
+                        ocr_result["extracted_date"] = cleaned_data["extracted_date"]
+                    if cleaned_data.get("extracted_time"):
+                        ocr_result["extracted_time"] = cleaned_data["extracted_time"]
+
+                    print("  🧹 Applied LLM text cleaning")
+                else:
+                    print("  ⚠️  No user name set, skipping text cleaning")
+
+            except Exception as cleaning_error:
+                print(f"  ⚠️  Text cleaning failed, using original OCR data: {cleaning_error}")
+                # Continue with original OCR data if cleaning fails
 
             # Create database record
             receipt = Receipt(
@@ -279,6 +330,55 @@ async def process_ocr_for_receipt(
         # Reprocess with VLM
         vlm_service = get_vlm_service()
         ocr_result = vlm_service.extract_text_from_image(receipt.image_path)
+
+        # Apply LLM-based text cleaning using user's name from settings
+        try:
+            from app.services.text_cleaning_service import get_text_cleaning_service
+
+            # Get user settings for text cleaning
+            user_settings = db.query(UserSettings).first()
+
+            if user_settings and user_settings.user_name:
+                # Parse name variations
+                try:
+                    name_variations = json.loads(user_settings.user_name_variations) if user_settings.user_name_variations else []
+                except:
+                    name_variations = []
+
+                # Clean OCR-extracted data
+                cleaner = get_text_cleaning_service()
+                extracted_data = {
+                    "sender": ocr_result.get("sender", ""),
+                    "receiver": ocr_result.get("receiver", ""),
+                    "amount": str(ocr_result.get("amount", "")) if ocr_result.get("amount") else "",
+                    "note": ocr_result.get("note", ""),
+                    "extracted_date": ocr_result.get("extracted_date", ""),
+                    "extracted_time": ocr_result.get("extracted_time", "")
+                }
+
+                cleaned_data = cleaner.clean_extracted_data(
+                    extracted_data=extracted_data,
+                    user_name=user_settings.user_name,
+                    name_variations=name_variations
+                )
+
+                # Use cleaned data
+                ocr_result["sender"] = cleaned_data.get("sender", "")
+                ocr_result["receiver"] = cleaned_data.get("receiver", "")
+                ocr_result["amount"] = cleaned_data.get("amount", "")
+                ocr_result["note"] = cleaned_data.get("note", "")
+                if cleaned_data.get("extracted_date"):
+                    ocr_result["extracted_date"] = cleaned_data["extracted_date"]
+                if cleaned_data.get("extracted_time"):
+                    ocr_result["extracted_time"] = cleaned_data["extracted_time"]
+
+                print("  🧹 Applied LLM text cleaning")
+            else:
+                print("  ⚠️  No user name set, skipping text cleaning")
+
+        except Exception as cleaning_error:
+            print(f"  ⚠️  Text cleaning failed, using original OCR data: {cleaning_error}")
+            # Continue with original OCR data if cleaning fails
 
         # Update receipt
         receipt.ocr_raw_text = ocr_result["raw_text"]

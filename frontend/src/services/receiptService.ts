@@ -22,6 +22,7 @@ export const receiptService = {
     date_from?: string;
     date_to?: string;
     sender?: string;
+    transaction_type?: string;
   }) => {
     const response = await api.get('/receipts/', { params });
     return response.data;
