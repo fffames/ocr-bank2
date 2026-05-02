@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// Get API URL from environment or use localhost for development
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: `${API_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -9,7 +12,7 @@ const api = axios.create({
 
 // Direct API instance for uploads (bypass proxy for multipart data)
 const directApi = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: `${API_URL}/api`,
 });
 
 // Request interceptor

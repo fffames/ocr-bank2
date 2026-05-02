@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from app.config import settings
+import os
 
 # Create FastAPI app
 app = FastAPI(
@@ -10,6 +11,26 @@ app = FastAPI(
     description="Bank receipt OCR and RAG chatbot API",
     version="1.0.0"
 )
+
+# Startup event - create necessary directories
+@app.on_event("startup")
+async def startup_event():
+    """Create necessary directories on startup."""
+    # Create image storage directory
+    os.makedirs(settings.image_storage_path, exist_ok=True)
+
+    # Create ChromaDB directory
+    os.makedirs(settings.chromadb_persist_directory, exist_ok=True)
+
+    # Create config directory for Google Sheets credentials
+    config_dir = os.path.dirname(settings.google_sheets_credentials_path)
+    if config_dir and not os.path.exists(config_dir):
+        os.makedirs(config_dir, exist_ok=True)
+
+    print(f"✅ Directories created:")
+    print(f"   - Images: {settings.image_storage_path}")
+    print(f"   - ChromaDB: {settings.chromadb_persist_directory}")
+    print(f"   - Config: {config_dir}")
 
 # Add validation error handler
 @app.exception_handler(RequestValidationError)
@@ -28,12 +49,19 @@ async def validation_exception_handler(request, exc: RequestValidationError):
     )
 
 from fastapi.staticfiles import StaticFiles
-app.mount("/images", StaticFiles(directory="backend/images"), name="images")
 
-# Configure CORS
+# Mount static files for images
+# In production (Railway), images are stored in /data/images
+# In development, they're in ./backend/images
+app.mount("/images", StaticFiles(directory=settings.image_storage_path), name="images")
+
+# Configure CORS from environment variable
+# Default to localhost for development
+cors_origins = settings.cors_origins.split(",") if settings.cors_origins else ["http://localhost:5173", "http://localhost:3000"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # Vite dev server
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

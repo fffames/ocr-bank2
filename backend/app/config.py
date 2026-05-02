@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     api_port: int = 8000
     debug: bool = True
 
+    # CORS
+    cors_origins: str = "http://localhost:5173,http://localhost:3000"  # Comma-separated list
+
     class Config:
         env_file = ".env"
         case_sensitive = False

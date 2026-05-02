@@ -1,0 +1,80 @@
+# Ignore files for Railway deployment
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+venv
+.venv
+env
+ENV
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Node (frontend)
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Frontend build artifacts (if in root)
+frontend/dist
+frontend/build
+frontend/node_modules
+
+# Images (will be uploaded)
+backend/images/*
+!backend/images/.gitkeep
+
+# Tests
+tests
+*.test.py
+.pytest_cache
+
+# Documentation
+*.md
+docs
+
+# Logs
+*.log
+logs
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ChromaDB local data (will use /data)
+data/chromadb/*
+!data/chromadb/.gitkeep
