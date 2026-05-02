@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Save, CheckCircle, Edit2, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, CheckCircle, Edit2 } from 'lucide-react';
 import { Receipt, ReceiptUpdate } from '../types/receipt';
 import { receiptService } from '../services/receiptService';
 

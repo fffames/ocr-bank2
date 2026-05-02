@@ -29,6 +29,6 @@ class ChatHistory(Base):
     session_id = Column(String(255), nullable=False)
     user_message = Column(Text, nullable=False)
     bot_response = Column(Text, nullable=False)
-    context_receipts = Column(Integer)  # Will be JSON serialized
+    context_receipts = Column(Text)  # JSON serialized list of receipt IDs
     created_at = Column(TIMESTAMP, server_default=func.now())
     llm_provider = Column(String(50), default="gemini")

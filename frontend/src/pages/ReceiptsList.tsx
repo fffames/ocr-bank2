@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Trash2, Eye, Calendar, User, DollarSign } from 'lucide-react';
+import { Search, Trash2, Eye, Calendar, DollarSign } from 'lucide-react';
 import { Receipt } from '../types/receipt';
 import { receiptService } from '../services/receiptService';
 import { format } from 'date-fns';
@@ -15,9 +15,20 @@ export default function ReceiptsListPage() {
     fetchReceipts();
   }, [statusFilter]);
 
+  // Debug logging (without filteredReceipts to avoid initialization issues)
+  useEffect(() => {
+    console.log('🔄 Component state updated:', {
+      loading,
+      receiptsCount: receipts.length,
+      searchTerm,
+      statusFilter
+    });
+  }, [loading, receipts, searchTerm, statusFilter]);
+
   const fetchReceipts = async () => {
     setLoading(true);
     try {
+      console.log('🔍 Fetching receipts...');
       const params: any = {
         limit: 100,
       };
@@ -25,9 +36,11 @@ export default function ReceiptsListPage() {
         params.status = statusFilter;
       }
       const data = await receiptService.getReceipts(params);
+      console.log('✅ Received receipts:', data);
+      console.log('📊 Data type:', typeof data, 'Is array:', Array.isArray(data), 'Length:', data?.length);
       setReceipts(data);
     } catch (error) {
-      console.error('Failed to fetch receipts:', error);
+      console.error('❌ Failed to fetch receipts:', error);
     } finally {
       setLoading(false);
     }
@@ -67,6 +80,9 @@ export default function ReceiptsListPage() {
 
   return (
     <div>
+      {/* Debug header */}
+      {console.log('🎨 Rendering ReceiptsList', { loading, receiptsCount: receipts.length })}
+
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Receipts</h1>
 
       {/* Search and Filter */}
@@ -137,7 +153,7 @@ export default function ReceiptsListPage() {
                       {receipt.extracted_date ? (
                         <div className="flex items-center gap-2">
                           <Calendar size={16} className="text-gray-400" />
-                          {format(new Date(receipt.extracted_date), 'MMM dd, yyyy')}
+                          {format(receipt.extracted_date instanceof Date ? receipt.extracted_date : new Date(receipt.extracted_date), 'MMM dd, yyyy')}
                         </div>
                       ) : (
                         '-'
@@ -153,7 +169,9 @@ export default function ReceiptsListPage() {
                       {receipt.amount ? (
                         <div className="flex items-center gap-2">
                           <DollarSign size={16} className="text-gray-400" />
-                          ฿{receipt.amount.toFixed(2)}
+                          ฿{typeof receipt.amount === 'number'
+                            ? receipt.amount.toFixed(2)
+                            : parseFloat(receipt.amount).toFixed(2)}
                         </div>
                       ) : (
                         '-'
@@ -227,7 +245,7 @@ export default function ReceiptsListPage() {
                     <div>
                       <dt className="text-sm font-medium text-gray-500">Date</dt>
                       <dd className="text-sm text-gray-900">
-                        {selectedReceipt.extracted_date ? format(new Date(selectedReceipt.extracted_date), 'MMM dd, yyyy') : '-'}
+                        {selectedReceipt.extracted_date ? format(selectedReceipt.extracted_date instanceof Date ? selectedReceipt.extracted_date : new Date(selectedReceipt.extracted_date), 'MMM dd, yyyy') : '-'}
                       </dd>
                     </div>
                     <div>
@@ -245,7 +263,11 @@ export default function ReceiptsListPage() {
                     <div>
                       <dt className="text-sm font-medium text-gray-500">Amount</dt>
                       <dd className="text-sm text-gray-900">
-                        {selectedReceipt.amount ? `฿${selectedReceipt.amount.toFixed(2)}` : '-'}
+                        {selectedReceipt.amount ? `฿${
+                          typeof selectedReceipt.amount === 'number'
+                            ? selectedReceipt.amount.toFixed(2)
+                            : parseFloat(selectedReceipt.amount).toFixed(2)
+                        }` : '-'}
                       </dd>
                     </div>
                     <div>
@@ -256,7 +278,11 @@ export default function ReceiptsListPage() {
                       <dt className="text-sm font-medium text-gray-500">Confidence</dt>
                       <dd className="text-sm text-gray-900">
                         {selectedReceipt.confidence_score
-                          ? `${Math.round(selectedReceipt.confidence_score * 100)}%`
+                          ? `${Math.round(
+                              typeof selectedReceipt.confidence_score === 'number'
+                                ? selectedReceipt.confidence_score * 100
+                                : parseFloat(selectedReceipt.confidence_score) * 100
+                            )}%`
                           : '-'}
                       </dd>
                     </div>

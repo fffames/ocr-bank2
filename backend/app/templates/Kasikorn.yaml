@@ -1,0 +1,57 @@
+bank_name: K+
+description: กสิกร
+detection:
+  primary_method: logo
+  keywords:
+  - K+
+  logo_region:
+    x_percent: 75
+    y_percent: 2
+    width_percent: 20
+    height_percent: 12
+image_size:
+- 990
+- 1409
+template_id: Kasikorn
+version: '1.0'
+zones:
+  amount:
+    height_percent: 5.992466202346569
+    parser: thai_amount
+    preprocessor: grayscale
+    required: false
+    width_percent: 33.930362516119786
+    x_percent: 26.987083700079832
+    y_percent: 72.60103283612189
+  date:
+    height_percent: 4.793972961877255
+    parser: thai_date
+    preprocessor: grayscale
+    required: false
+    width_percent: 23.187931140359854
+    x_percent: 5.895236730599963
+    y_percent: 6.868288185766453
+  receiver_name:
+    height_percent: 5.531507263704525
+    parser: thai_name
+    preprocessor: grayscale
+    required: false
+    width_percent: 43.624751806439725
+    x_percent: 22.532904836959858
+    y_percent: 40.14952355572201
+  sender_name:
+    height_percent: 5.070548325062481
+    parser: thai_name
+    preprocessor: grayscale
+    required: false
+    width_percent: 39.95660450739975
+    x_percent: 23.97396270443985
+    y_percent: 17.28596019907664
+  time:
+    height_percent: 4.148630447778394
+    parser: time
+    preprocessor: grayscale
+    required: false
+    width_percent: 10.218410333039936
+    x_percent: 29.607188913679817
+    y_percent: 7.144863548951679

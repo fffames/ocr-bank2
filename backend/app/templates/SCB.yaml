@@ -1,0 +1,52 @@
+bank_name: SCB
+description: ไทยพาณิชย์
+detection:
+  keywords:
+  - SCB
+  primary_method: keywords
+image_size:
+- 860
+- 1428
+template_id: SCB
+version: '1.0'
+zones:
+  amount:
+    height_percent: 4.664636594419978
+    parser: thai_amount
+    preprocessor: grayscale
+    required: false
+    width_percent: 29.607188913679817
+    x_percent: 67.20569872883958
+    y_percent: 60.36355999728226
+  date:
+    height_percent: 3.874020222484388
+    parser: thai_date
+    preprocessor: grayscale
+    required: false
+    width_percent: 21.877878533559862
+    x_percent: 32.75131516999979
+    y_percent: 21.662888591035152
+  receiver_name:
+    height_percent: 4.980883143194214
+    parser: text
+    preprocessor: grayscale
+    required: false
+    width_percent: 55.80824104967965
+    x_percent: 40.08760976807975
+    y_percent: 41.546890345215225
+  sender_name:
+    height_percent: 4.980883143194214
+    parser: text
+    preprocessor: grayscale
+    required: false
+    width_percent: 55.67723578899966
+    x_percent: 40.34962028943975
+    y_percent: 32.21761715637527
+  time:
+    height_percent: 3.3205887621294754
+    parser: time
+    preprocessor: grayscale
+    required: false
+    width_percent: 10.349415593719936
+    x_percent: 56.20125683171965
+    y_percent: 21.78148104682549

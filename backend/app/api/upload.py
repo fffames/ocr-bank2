@@ -11,6 +11,7 @@ from app.database.connection import get_db
 from app.models.receipt import Receipt
 from app.services.vlm_service import get_vlm_service
 from app.services.lm_studio_vlm_service import get_lm_studio_vlm_service
+from app.services.template_ocr_service import get_template_ocr_service
 from app.config import settings
 
 router = APIRouter()
@@ -19,6 +20,7 @@ router = APIRouter()
 @router.post("/")
 async def upload_images(
     files: Optional[List[UploadFile]] = File(None),
+    template_id: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """
@@ -26,6 +28,7 @@ async def upload_images(
 
     Args:
         files: List of image files to upload
+        template_id: Optional template ID to force specific template
         db: Database session
 
     Returns:
@@ -40,13 +43,25 @@ async def upload_images(
 
     processed_receipts = []
 
-    # Choose VLM service based on configuration
-    if settings.vlm_provider == "lm_studio":
-        vlm_service = get_lm_studio_vlm_service()
-        print("🖥️  Using LM Studio VLM (local)")
-    else:  # default to groq
+    # Initialize services
+    template_ocr_service = get_template_ocr_service()
+
+    # Prefer Groq VLM as fallback (more reliable than LM Studio)
+    try:
         vlm_service = get_vlm_service()
-        print("☁️  Using Groq VLM (cloud)")
+        print("☁️  Groq VLM available (fallback)")
+    except Exception as e:
+        print(f"⚠️  Groq VLM not available: {e}")
+        vlm_service = None
+
+    # LM Studio as secondary fallback
+    if not vlm_service:
+        try:
+            vlm_service = get_lm_studio_vlm_service()
+            print("🖥️  LM Studio VLM available (secondary fallback)")
+        except Exception as e:
+            print(f"⚠️  LM Studio VLM not available: {e}")
+            vlm_service = None
 
     for file in files:
         # Validate file type
@@ -77,9 +92,38 @@ async def upload_images(
             async with aiofiles.open(upload_path, "wb") as f:
                 await f.write(content)
 
-            # Process with VLM
-            print(f"Processing {file.filename} with VLM...")
-            ocr_result = vlm_service.extract_text_from_image(upload_path)
+            # Process with Template OCR (primary) or VLM (fallback)
+            print(f"Processing {file.filename}...")
+            ocr_result = None
+
+            try:
+                # Try template-based OCR first
+                if template_id:
+                    print(f"  🎯 Using specified template: {template_id}")
+                    ocr_result = template_ocr_service.extract_from_image(upload_path, template_id=template_id)
+                    print("  ✅ Template OCR successful")
+                else:
+                    print("  🎯 Attempting template auto-detection...")
+                    ocr_result = template_ocr_service.extract_from_image(upload_path)
+                    print("  ✅ Template OCR successful")
+            except Exception as template_error:
+                print(f"  ⚠️  Template OCR failed: {template_error}")
+                if vlm_service:
+                    print("  🔄 Falling back to VLM...")
+                    try:
+                        ocr_result = vlm_service.extract_text_from_image(upload_path)
+                        print("  ✅ VLM fallback successful")
+                    except Exception as vlm_error:
+                        print(f"  ❌ VLM also failed: {vlm_error}")
+                        raise HTTPException(
+                            status_code=500,
+                            detail=f"Both Template OCR and VLM failed: {str(vlm_error)}"
+                        )
+                else:
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Template OCR failed and no VLM fallback available: {str(template_error)}"
+                    )
 
             # Move file to permanent storage
             os.rename(upload_path, final_path)

@@ -1,0 +1,299 @@
+/* Developer Mode Design System - Precision Technical Aesthetic */
+
+:root {
+  --dev-bg-primary: #0a0e27;
+  --dev-bg-secondary: #151932;
+  --dev-bg-tertiary: #1a1f3a;
+  --dev-border: #2d3561;
+  --dev-accent: #00d4ff;
+  --dev-accent-hover: #00b8e6;
+  --dev-accent-dim: rgba(0, 212, 255, 0.1);
+  --dev-text-primary: #e8eaf0;
+  --dev-text-secondary: #9ca3af;
+  --dev-text-muted: #6b7280;
+  --dev-success: #10b981;
+  --dev-warning: #f59e0b;
+  --dev-error: #ef4444;
+  --dev-grid-color: rgba(0, 212, 255, 0.05);
+  --dev-grid-size: 20px;
+
+  --dev-font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  --dev-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Developer Mode Container */
+.dev-mode {
+  background: var(--dev-bg-primary);
+  color: var(--dev-text-primary);
+  font-family: var(--dev-font-sans);
+  min-height: 100vh;
+}
+
+/* Grid Pattern Background */
+.dev-grid-bg {
+  background-image:
+    linear-gradient(var(--dev-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--dev-grid-color) 1px, transparent 1px);
+  background-size: var(--dev-grid-size) var(--dev-grid-size);
+  background-position: -1px -1px;
+}
+
+/* Glass Card Effect */
+.dev-card {
+  background: rgba(21, 25, 50, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--dev-border);
+  border-radius: 12px;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(0, 212, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Technical Input Fields */
+.dev-input {
+  background: var(--dev-bg-tertiary);
+  border: 1px solid var(--dev-border);
+  color: var(--dev-text-primary);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-family: var(--dev-font-mono);
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.dev-input:focus {
+  outline: none;
+  border-color: var(--dev-accent);
+  box-shadow: 0 0 0 3px var(--dev-accent-dim);
+}
+
+.dev-input::placeholder {
+  color: var(--dev-text-muted);
+}
+
+/* Technical Button */
+.dev-btn {
+  background: linear-gradient(135deg, var(--dev-accent) 0%, #00b4d8 100%);
+  color: var(--dev-bg-primary);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+}
+
+.dev-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4);
+}
+
+.dev-btn:active {
+  transform: translateY(0);
+}
+
+.dev-btn-secondary {
+  background: var(--dev-bg-tertiary);
+  color: var(--dev-text-primary);
+  border: 1px solid var(--dev-border);
+  box-shadow: none;
+}
+
+.dev-btn-secondary:hover {
+  background: var(--dev-bg-secondary);
+  border-color: var(--dev-accent);
+  box-shadow: 0 0 0 3px var(--dev-accent-dim);
+}
+
+.dev-btn-danger {
+  background: linear-gradient(135deg, var(--dev-error) 0%, #dc2626 100%);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Zone Overlay Styles */
+.zone-rect {
+  fill: rgba(0, 212, 255, 0.15);
+  stroke: var(--dev-accent);
+  stroke-width: 2;
+  cursor: move;
+  transition: all 0.2s ease;
+}
+
+.zone-rect:hover {
+  fill: rgba(0, 212, 255, 0.25);
+  stroke-width: 3;
+}
+
+.zone-rect.selected {
+  fill: rgba(0, 212, 255, 0.3);
+  stroke: var(--dev-accent);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.5));
+}
+
+/* Zone Corner Handles */
+.zone-handle {
+  fill: var(--dev-accent);
+  stroke: var(--dev-bg-primary);
+  stroke-width: 2;
+  cursor: nwse-resize;
+  transition: all 0.15s ease;
+}
+
+.zone-handle:hover {
+  fill: var(--dev-accent-hover);
+  transform: scale(1.2);
+}
+
+/* Canvas Container */
+.dev-canvas-container {
+  position: relative;
+  background: var(--dev-bg-secondary);
+  border: 2px solid var(--dev-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(0, 212, 255, 0.1);
+}
+
+.dev-canvas-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--dev-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--dev-grid-color) 1px, transparent 1px);
+  background-size: var(--dev-grid-size) var(--dev-grid-size);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Technical Badge */
+.dev-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: var(--dev-accent-dim);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dev-accent);
+  font-family: var(--dev-font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Coordinate Display */
+.dev-coordinate {
+  font-family: var(--dev-font-mono);
+  font-size: 12px;
+  color: var(--dev-accent);
+  background: var(--dev-bg-tertiary);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--dev-border);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dev-coordinate::before {
+  content: '📍';
+  font-size: 10px;
+}
+
+/* Zone List Item */
+.zone-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--dev-bg-tertiary);
+  border: 1px solid var(--dev-border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.zone-list-item:hover {
+  border-color: var(--dev-accent);
+  box-shadow: 0 0 0 3px var(--dev-accent-dim);
+}
+
+.zone-list-item.selected {
+  border-color: var(--dev-accent);
+  background: rgba(0, 212, 255, 0.05);
+}
+
+/* Scrollbar Styling */
+.dev-mode ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.dev-mode ::-webkit-scrollbar-track {
+  background: var(--dev-bg-secondary);
+  border-radius: 5px;
+}
+
+.dev-mode ::-webkit-scrollbar-thumb {
+  background: var(--dev-border);
+  border-radius: 5px;
+}
+
+.dev-mode ::-webkit-scrollbar-thumb:hover {
+  background: var(--dev-accent);
+}
+
+/* Animation Keyframes */
+@keyframes zoneCreate {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.zone-create-animation {
+  animation: zoneCreate 0.3s ease-out;
+}
+
+.pulse-animation {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.slide-in-animation {
+  animation: slideIn 0.3s ease-out;
+}

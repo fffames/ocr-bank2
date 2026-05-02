@@ -1,59 +1,132 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { Upload, FileText, MessageSquare, BarChart3, Home } from 'lucide-react';
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Upload, FileText, MessageSquare, BarChart3, Home, Code2, User, Grid3x3 } from 'lucide-react';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import UploadPage from './pages/Upload';
 import ReviewPage from './pages/Review';
 import ReceiptsListPage from './pages/ReceiptsList';
+import ReceiptsListDebugPage from './pages/ReceiptsListDebug';
 import ChatPage from './pages/Chat';
+import TemplateBuilder from './pages/developer/TemplateBuilder';
+import TemplateManagement from './pages/developer/TemplateManagement';
+import './styles/developer.css';
 
 function App() {
-  return (
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        {/* Navigation Bar */}
-        <nav className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex items-center">
-                <Link to="/" className="flex items-center space-x-2">
-                  <FileText className="h-8 w-8 text-blue-600" />
-                  <span className="text-xl font-bold text-gray-900">OCR Bank</span>
-                </Link>
-              </div>
+  const [mode, setMode] = useState<'user' | 'developer'>('user');
 
-              <div className="flex items-center space-x-4">
-                <NavLink to="/" icon={<Home size={20} />}>
-                  Dashboard
-                </NavLink>
-                <NavLink to="/upload" icon={<Upload size={20} />}>
-                  Upload
-                </NavLink>
-                <NavLink to="/receipts" icon={<FileText size={20} />}>
-                  Receipts
-                </NavLink>
-                <NavLink to="/chat" icon={<MessageSquare size={20} />}>
-                  Chat
-                </NavLink>
-                <NavLink to="/analytics" icon={<BarChart3 size={20} />}>
-                  Analytics
-                </NavLink>
-              </div>
+  return (
+    <ErrorBoundary>
+      <Router>
+        {mode === 'developer' ? (
+          <DeveloperModeApp onModeChange={setMode} />
+        ) : (
+          <UserModeApp onModeChange={setMode} />
+        )}
+      </Router>
+    </ErrorBoundary>
+  );
+}
+
+function UserModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'developer') => void }) {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation Bar */}
+      <nav className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <Link to="/" className="flex items-center space-x-2">
+                <FileText className="h-8 w-8 text-blue-600" />
+                <span className="text-xl font-bold text-gray-900">OCR Bank</span>
+              </Link>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <NavLink to="/" icon={<Home size={20} />}>
+                Dashboard
+              </NavLink>
+              <NavLink to="/upload" icon={<Upload size={20} />}>
+                Upload
+              </NavLink>
+              <NavLink to="/receipts" icon={<FileText size={20} />}>
+                Receipts
+              </NavLink>
+              <NavLink to="/chat" icon={<MessageSquare size={20} />}>
+                Chat
+              </NavLink>
+              <NavLink to="/analytics" icon={<BarChart3 size={20} />}>
+                Analytics
+              </NavLink>
+              <button
+                onClick={() => onModeChange('developer')}
+                className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+              >
+                <Code2 size={20} />
+                <span>Developer Mode</span>
+              </button>
             </div>
           </div>
-        </nav>
+        </div>
+      </nav>
 
-        {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/upload" element={<UploadPage />} />
-            <Route path="/review" element={<ReviewPage />} />
-            <Route path="/receipts" element={<ReceiptsListPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/upload" element={<UploadPage />} />
+          <Route path="/review" element={<ReviewPage />} />
+          <Route path="/receipts" element={<ReceiptsListPage />} />
+          <Route path="/receipts-debug" element={<ReceiptsListDebugPage />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
+function DeveloperModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'developer') => void }) {
+  return (
+    <div className="min-h-screen">
+      {/* Developer Navigation */}
+      <nav className="border-b border-[var(--dev-border)] bg-[var(--dev-bg-secondary)]/90 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center space-x-6">
+              <Link to="/developer/templates" className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-[var(--dev-accent)] to-[#00b4d8] rounded-lg flex items-center justify-center">
+                  <Grid3x3 className="h-5 w-5 text-[var(--dev-bg-primary)]" />
+                </div>
+                <span className="text-xl font-bold text-[var(--dev-text-primary)]">OCR Developer</span>
+              </Link>
+              <DevNavLink to="/developer/templates" icon={<Grid3x3 size={18} />}>
+                Templates
+              </DevNavLink>
+              <DevNavLink to="/developer/template-builder" icon={<Code2 size={18} />}>
+                Builder
+              </DevNavLink>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => onModeChange('user')}
+                className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium bg-[var(--dev-bg-tertiary)] text-[var(--dev-text-primary)] border border-[var(--dev-border)] hover:border-[var(--dev-accent)] transition-colors"
+              >
+                <User size={18} />
+                <span>User Mode</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <Routes>
+        <Route path="/developer/templates" element={<TemplateManagement />} />
+        <Route path="/developer/template-builder" element={<TemplateBuilder />} />
+        <Route path="/developer/template-builder/:templateId" element={<TemplateBuilder />} />
+      </Routes>
+    </div>
   );
 }
 
@@ -62,6 +135,25 @@ function NavLink({ to, children, icon }: { to: string; children: React.ReactNode
     <Link
       to={to}
       className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 transition-colors"
+    >
+      {icon}
+      <span>{children}</span>
+    </Link>
+  );
+}
+
+function DevNavLink({ to, children, icon }: { to: string; children: React.ReactNode; icon: React.ReactNode }) {
+  const location = useLocation();
+  const isActive = location.pathname === to || location.pathname.startsWith(to + '/');
+
+  return (
+    <Link
+      to={to}
+      className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+        isActive
+          ? 'text-[var(--dev-accent)] bg-[var(--dev-accent-dim)]'
+          : 'text-[var(--dev-text-secondary)] hover:text-[var(--dev-text-primary)] hover:bg-[var(--dev-bg-tertiary)]'
+      }`}
     >
       {icon}
       <span>{children}</span>

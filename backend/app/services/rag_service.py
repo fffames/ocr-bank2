@@ -31,11 +31,21 @@ class RAGService:
             Dictionary containing response and source receipts
         """
         # Step 1: Retrieve relevant receipts using semantic search
-        relevant_receipts = self.vector_store.search(user_query, n_results=5)
+        relevant_receipts = self.vector_store.search(user_query, n_results=10)  # Get more results for filtering
 
-        # Step 2: Fetch full receipt details from database
+        # Step 2: Fetch full receipt details from database and filter for data quality
         receipt_ids = [r['id'] for r in relevant_receipts]
-        receipts = db.query(Receipt).filter(Receipt.id.in_(receipt_ids)).all()
+        all_receipts = db.query(Receipt).filter(Receipt.id.in_(receipt_ids)).all()
+
+        # Filter to only include receipts with actual data
+        receipts = [r for r in all_receipts if r.sender or r.receiver or r.amount]
+
+        if not receipts:
+            return {
+                "response": "I couldn't find any receipts with the information needed to answer your question. Please make sure your receipts have been processed with OCR and contain extracted data like sender, receiver, or amount.",
+                "source_receipts": [],
+                "session_id": session_id
+            }
 
         # Step 3: Construct context from receipts
         context = self._construct_context(receipts)
@@ -44,7 +54,8 @@ class RAGService:
         response = await self.llm_provider.generate_response(user_query, context)
 
         # Step 5: Save chat history
-        self._save_chat_history(session_id, user_query, response, receipt_ids, db)
+        filtered_receipt_ids = [r.id for r in receipts]
+        self._save_chat_history(session_id, user_query, response, filtered_receipt_ids, db)
 
         return {
             "response": response,

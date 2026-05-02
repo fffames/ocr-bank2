@@ -24,7 +24,8 @@ class GeminiProvider(LLMProvider):
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY is required for Gemini provider")
         genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        # Use the newer Gemini 3.1 Flash Lite Preview model
+        self.model = genai.GenerativeModel('gemini-3.1-flash-lite-preview')
 
     async def generate_response(self, prompt: str, context: str) -> str:
         """Generate response using Gemini API."""
