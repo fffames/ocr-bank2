@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Search, Trash2, Eye, Calendar, DollarSign } from 'lucide-react';
+import { Search, Trash2, Eye, Calendar, DollarSign, FileSpreadsheet, Download } from 'lucide-react';
 import { Receipt } from '../types/receipt';
 import { receiptService } from '../services/receiptService';
+import { exportService } from '../services/exportService';
 import { format } from 'date-fns';
+
+interface ExportResult {
+  success: boolean;
+  rows_exported?: number;
+  worksheet?: string;
+  spreadsheet_url?: string;
+  error?: string;
+}
 
 export default function ReceiptsListPage() {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
@@ -10,6 +19,7 @@ export default function ReceiptsListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
+  const [exportResult, setExportResult] = useState<ExportResult | null>(null);
 
   useEffect(() => {
     fetchReceipts();
@@ -61,6 +71,65 @@ export default function ReceiptsListPage() {
     }
   };
 
+  const handleExportAll = async () => {
+    try {
+      const result = await exportService.exportToSheets();
+      if (result.success) {
+        setExportResult(result);
+      } else {
+        alert(`❌ Export failed: ${result.error}`);
+      }
+    } catch (error: any) {
+      console.error('Export error:', error);
+      if (error.response?.data?.detail) {
+        alert(`❌ Export failed: ${error.response.data.detail}`);
+      } else {
+        alert('❌ Export failed. Please check if Google Sheets is configured.');
+      }
+    }
+  };
+
+  const handleExportFiltered = async () => {
+    try {
+      const receiptIds = filteredReceipts.map(r => r.id);
+      if (receiptIds.length === 0) {
+        alert('No receipts to export');
+        return;
+      }
+      const result = await exportService.exportToSheets(receiptIds);
+      if (result.success) {
+        setExportResult(result);
+      } else {
+        alert(`❌ Export failed: ${result.error}`);
+      }
+    } catch (error: any) {
+      console.error('Export error:', error);
+      if (error.response?.data?.detail) {
+        alert(`❌ Export failed: ${error.response.data.detail}`);
+      } else {
+        alert('❌ Export failed. Please check if Google Sheets is configured.');
+      }
+    }
+  };
+
+  const handleExportSummary = async () => {
+    try {
+      const result = await exportService.exportSummary();
+      if (result.success) {
+        setExportResult(result);
+      } else {
+        alert(`❌ Export failed: ${result.error}`);
+      }
+    } catch (error: any) {
+      console.error('Export error:', error);
+      if (error.response?.data?.detail) {
+        alert(`❌ Export failed: ${error.response.data.detail}`);
+      } else {
+        alert('❌ Export failed. Please check if Google Sheets is configured.');
+      }
+    }
+  };
+
   const filteredReceipts = receipts.filter(receipt =>
     receipt.sender?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     receipt.receiver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,27 +153,54 @@ export default function ReceiptsListPage() {
 
       {/* Search and Filter */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search by sender, receiver, or note..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            />
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="Search by sender, receiver, or note..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="reviewed">Reviewed</option>
+              <option value="confirmed">Confirmed</option>
+            </select>
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="reviewed">Reviewed</option>
-            <option value="confirmed">Confirmed</option>
-          </select>
+
+          {/* Export Buttons */}
+          <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
+            <button
+              onClick={() => handleExportAll()}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              <FileSpreadsheet size={18} />
+              Export All to Sheets
+            </button>
+            <button
+              onClick={() => handleExportFiltered()}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Download size={18} />
+              Export Filtered Results
+            </button>
+            <button
+              onClick={() => handleExportSummary()}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+            >
+              <FileSpreadsheet size={18} />
+              Export Summary
+            </button>
+          </div>
         </div>
       </div>
 
@@ -326,6 +422,54 @@ export default function ReceiptsListPage() {
                   </pre>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Success Modal */}
+      {exportResult && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">✅ Export Successful!</h2>
+              <button
+                onClick={() => setExportResult(null)}
+                className="text-gray-400 hover:text-gray-600 text-3xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">
+                  {exportResult.rows_exported
+                    ? `Exported ${exportResult.rows_exported} receipts`
+                    : 'Exported summary'}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Worksheet: <span className="font-mono font-semibold">{exportResult.worksheet}</span>
+                </p>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-sm font-medium text-green-900 mb-3">
+                  📊 Open your Google Sheets spreadsheet:
+                </p>
+                <a
+                  href={exportResult.spreadsheet_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full text-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  Open Spreadsheet
+                </a>
+              </div>
+
+              <div className="text-xs text-gray-500">
+                <p className="mb-1">💡 Tip: Right-click the button and select "Copy link address" if you want to share it.</p>
+              </div>
             </div>
           </div>
         </div>
