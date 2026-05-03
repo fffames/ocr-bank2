@@ -60,3 +60,7 @@ frontend/build/
 
 # Alembic
 *.pyc
+
+# Git worktrees (isolated development)
+.worktrees/
+worktrees/
