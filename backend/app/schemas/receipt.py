@@ -17,6 +17,9 @@ class ReceiptBase(BaseModel):
     transaction_type: Optional[str] = None
     transaction_confidence: Optional[str] = None
     classification_reason: Optional[str] = None
+    is_salary: bool = False
+    is_manual_income: bool = False
+    income_category: Optional[str] = None
 
 
 class ReceiptCreate(ReceiptBase):
@@ -33,6 +36,7 @@ class ReceiptUpdate(BaseModel):
     note: Optional[str] = None
     status: Optional[str] = None
     transaction_type: Optional[str] = None
+    income_category: Optional[str] = None
 
 
 class ReceiptResponse(ReceiptBase):

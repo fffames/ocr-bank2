@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DECIMAL, Date, Time, TIMESTAMP, DateTime
+from sqlalchemy import Column, Integer, String, Text, DECIMAL, Date, Time, TIMESTAMP, DateTime, Boolean
 from sqlalchemy.sql import func
 from app.database.connection import Base
 
@@ -21,6 +21,11 @@ class Receipt(Base):
     transaction_type = Column(String(20), nullable=True)  # "sending", "receiving", "unknown"
     transaction_confidence = Column(String(10), nullable=True)  # "high", "medium", "low"
     classification_reason = Column(Text, nullable=True)  # Why classified this way
+    is_salary = Column(Boolean, default=False, nullable=False)  # Is this a salary entry?
+    is_manual_income = Column(Boolean, default=False, nullable=False)  # Is this manually added income?
+    income_category = Column(String(100), nullable=True)  # Category for income (Salary, Freelance, etc.)
+    detected_template = Column(String(100), nullable=True)  # Template ID used for OCR extraction
+    ocr_engine = Column(String(50), default="template")  # OCR engine used: 'template' or 'vlm'
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 

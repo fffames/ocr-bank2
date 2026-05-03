@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Search, Trash2, Eye, Calendar, DollarSign, FileSpreadsheet, Download } from 'lucide-react';
+import { Search, Trash2, Eye, Calendar, DollarSign, FileSpreadsheet, Download, Plus, X, Edit2, Check, CheckSquare } from 'lucide-react';
 import { Receipt } from '../types/receipt';
 import { receiptService } from '../services/receiptService';
 import { exportService } from '../services/exportService';
+import { analyticsService, ManualIncome } from '../services/analyticsService';
 import { format } from 'date-fns';
 
 interface ExportResult {
@@ -23,9 +24,39 @@ export default function ReceiptsListPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
+  const [selectedReceiptIds, setSelectedReceiptIds] = useState<Set<number>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  // Income management state
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [editingIncome, setEditingIncome] = useState<ManualIncome | null>(null);
+  const [incomeCategories, setIncomeCategories] = useState<Array<{id?: number; name: string}>>([]);
+  const [incomeForm, setIncomeForm] = useState<ManualIncome>({
+    amount: 0,
+    category: 'Salary',
+    income_date: new Date().toISOString().split('T')[0],
+    note: ''
+  });
+
+  // Receipt editing state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingReceipt, setEditingReceipt] = useState<Receipt | null>(null);
+  const [editForm, setEditForm] = useState({
+    sender: '',
+    receiver: '',
+    amount: '',
+    extracted_date: '',
+    extracted_time: '',
+    note: '',
+    transaction_type: '',
+    income_category: ''
+  });
 
   useEffect(() => {
     fetchReceipts();
+    checkAndGenerateSalaryForFilters();
+    // Clear selections when filters change
+    setSelectedReceiptIds(new Set());
   }, [statusFilter, yearFilter, monthFilter, typeFilter]);
 
   // Debug logging (without filteredReceipts to avoid initialization issues)
@@ -79,16 +110,37 @@ export default function ReceiptsListPage() {
         }
       }
 
+      console.log('📤 Fetching with params:', params);
       const data = await receiptService.getReceipts(params);
-      console.log('✅ Received receipts:', data);
-      console.log('📊 Data type:', typeof data, 'Is array:', Array.isArray(data), 'Length:', data?.length);
+      console.log(`✅ Fetched ${data.length} receipts`);
       setReceipts(data);
     } catch (error) {
-      console.error('❌ Failed to fetch receipts:', error);
+      console.error('❌ Error fetching receipts:', error);
+      setReceipts([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const checkAndGenerateSalaryForFilters = async () => {
+    // Only check/generate salary if both year and month are selected
+    if (yearFilter !== 'all' && monthFilter !== 'all') {
+      try {
+        const year = parseInt(yearFilter);
+        const month = parseInt(monthFilter);
+
+        const result = await analyticsService.checkAndGenerateSalary(year, month);
+        if (result.status === 'created') {
+          console.log(`✅ Salary created for ${year}-${month}`);
+          // Reload receipts to show the new salary entry
+          fetchReceipts();
+        }
+      } catch (error) {
+        console.error('Failed to check/generate salary:', error);
+      }
+    }
+  };
+
 
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this receipt?')) return;
@@ -102,6 +154,226 @@ export default function ReceiptsListPage() {
     } catch (error) {
       console.error('Failed to delete receipt:', error);
       alert('Failed to delete receipt. Please try again.');
+    }
+  };
+
+  // Selection and bulk delete functions
+  const handleToggleSelectAll = () => {
+    if (selectedReceiptIds.size === filteredReceipts.length) {
+      setSelectedReceiptIds(new Set());
+    } else {
+      setSelectedReceiptIds(new Set(filteredReceipts.map(r => r.id)));
+    }
+  };
+
+  const handleToggleSelect = (id: number) => {
+    const newSelected = new Set(selectedReceiptIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedReceiptIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedReceiptIds.size === 0) return;
+
+    const count = selectedReceiptIds.size;
+    if (!confirm(`Are you sure you want to delete ${count} receipt${count > 1 ? 's' : ''}?`)) return;
+
+    setBulkDeleting(true);
+    try {
+      // Delete all selected receipts
+      const deletePromises = Array.from(selectedReceiptIds).map(id =>
+        receiptService.deleteReceipt(id)
+      );
+      await Promise.all(deletePromises);
+
+      // Update state
+      setReceipts(prev => prev.filter(r => !selectedReceiptIds.has(r.id)));
+      setSelectedReceiptIds(new Set());
+      setSelectedReceipt(null);
+
+      alert(`✅ Successfully deleted ${count} receipt${count > 1 ? 's' : ''}`);
+    } catch (error) {
+      console.error('Failed to delete receipts:', error);
+      alert(`Failed to delete some receipts. Please try again.`);
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  // Income management functions
+  const fetchIncomeCategories = async () => {
+    try {
+      const categories = await analyticsService.getIncomeCategories();
+      console.log('📁 Income categories loaded:', categories);
+
+      // If no categories exist, show default options
+      if (categories.length === 0) {
+        console.log('No categories found, using defaults');
+        setIncomeCategories([
+          { name: 'Salary' },
+          { name: 'Freelance' },
+          { name: 'Bonus' },
+          { name: 'Investment Return' },
+          { name: 'Commission' },
+          { name: 'Gift' },
+          { name: 'Refund' },
+          { name: 'Rental Income' },
+          { name: 'Other Income' }
+        ]);
+      } else {
+        setIncomeCategories(categories);
+      }
+    } catch (error) {
+      console.error('Failed to load income categories:', error);
+      // If API fails, use default categories
+      setIncomeCategories([
+        { name: 'Salary' },
+        { name: 'Freelance' },
+        { name: 'Bonus' },
+        { name: 'Investment Return' },
+        { name: 'Commission' },
+        { name: 'Gift' },
+        { name: 'Refund' },
+        { name: 'Rental Income' },
+        { name: 'Other Income' }
+      ]);
+    }
+  };
+
+  const handleOpenIncomeModal = async () => {
+    setEditingIncome(null);
+    await fetchIncomeCategories();
+
+    // Set first category as default if available
+    const defaultCategory = incomeCategories.length > 0 ? incomeCategories[0].name : 'Other Income';
+    setIncomeForm({
+      amount: 0,
+      category: defaultCategory,
+      income_date: new Date().toISOString().split('T')[0],
+      note: ''
+    });
+    setShowIncomeModal(true);
+  };
+
+  const handleCloseIncomeModal = () => {
+    setShowIncomeModal(false);
+    setEditingIncome(null);
+    setIncomeForm({
+      amount: 0,
+      category: 'Other Income',
+      income_date: new Date().toISOString().split('T')[0],
+      note: ''
+    });
+  };
+
+  const handleSaveIncome = async () => {
+    if (incomeForm.amount <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
+    try {
+      if (editingIncome) {
+        // Update existing income - not implemented in backend yet
+        alert('Edit functionality coming soon');
+      } else {
+        // Create new income
+        await analyticsService.createManualIncome(incomeForm);
+        alert('✅ Income entry added successfully');
+      }
+
+      handleCloseIncomeModal();
+      fetchReceipts(); // Reload to show new entry
+    } catch (error: any) {
+      console.error('Failed to save income:', error);
+      alert(`Failed to save income: ${error.response?.data?.detail || error.message}`);
+    }
+  };
+
+  const handleDeleteIncome = async (id: number) => {
+    if (!confirm('Delete this income entry?')) return;
+
+    try {
+      await analyticsService.deleteIncome(id);
+      alert('✅ Income entry deleted');
+      fetchReceipts();
+    } catch (error: any) {
+      console.error('Failed to delete income:', error);
+      alert(`Failed to delete income: ${error.response?.data?.detail || error.message}`);
+    }
+  };
+
+  // Receipt editing functions
+  const handleEditReceipt = async (receipt: Receipt) => {
+    // Load income categories if not already loaded
+    if (incomeCategories.length === 0) {
+      await fetchIncomeCategories();
+    }
+
+    setEditingReceipt(receipt);
+    setEditForm({
+      sender: receipt.sender || '',
+      receiver: receipt.receiver || '',
+      amount: receipt.amount ? String(receipt.amount) : '',
+      extracted_date: receipt.extracted_date || '',
+      extracted_time: receipt.extracted_time || '',
+      note: receipt.note || '',
+      transaction_type: receipt.transaction_type || 'unknown',
+      income_category: receipt.income_category || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingReceipt(null);
+    setEditForm({
+      sender: '',
+      receiver: '',
+      amount: '',
+      extracted_date: '',
+      extracted_time: '',
+      note: '',
+      transaction_type: '',
+      income_category: ''
+    });
+  };
+
+  const handleSaveReceiptEdit = async () => {
+    if (!editingReceipt) return;
+
+    try {
+      const updateData: any = {};
+      if (editForm.sender !== editingReceipt.sender) updateData.sender = editForm.sender;
+      if (editForm.receiver !== editingReceipt.receiver) updateData.receiver = editForm.receiver;
+      if (editForm.amount && parseFloat(editForm.amount) !== parseFloat(editingReceipt.amount || 0)) {
+        updateData.amount = parseFloat(editForm.amount);
+      }
+      if (editForm.extracted_date && editForm.extracted_date !== editingReceipt.extracted_date) {
+        updateData.extracted_date = editForm.extracted_date;
+      }
+      if (editForm.extracted_time && editForm.extracted_time !== editingReceipt.extracted_time) {
+        updateData.extracted_time = editForm.extracted_time;
+      }
+      if (editForm.note !== editingReceipt.note) updateData.note = editForm.note;
+      if (editForm.transaction_type && editForm.transaction_type !== editingReceipt.transaction_type) {
+        updateData.transaction_type = editForm.transaction_type;
+      }
+      if (editForm.income_category && editForm.income_category !== editingReceipt.income_category) {
+        updateData.income_category = editForm.income_category;
+      }
+
+      await receiptService.updateReceipt(editingReceipt.id, updateData);
+      alert('✅ Receipt updated successfully');
+      handleCloseEditModal();
+      fetchReceipts();
+    } catch (error: any) {
+      console.error('Failed to update receipt:', error);
+      alert(`Failed to update receipt: ${error.response?.data?.detail || error.message}`);
     }
   };
 
@@ -275,8 +547,25 @@ export default function ReceiptsListPage() {
             )}
           </div>
 
-          {/* Export Buttons */}
+          {/* Export and Action Buttons */}
           <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
+            <button
+              onClick={handleOpenIncomeModal}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+            >
+              <Plus size={18} />
+              Add Income
+            </button>
+            {selectedReceiptIds.size > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkDeleting}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                <Trash2 size={18} />
+                Delete Selected ({selectedReceiptIds.size})
+              </button>
+            )}
             <button
               onClick={() => handleExportAll()}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
@@ -317,6 +606,14 @@ export default function ReceiptsListPage() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                    <input
+                      type="checkbox"
+                      checked={selectedReceiptIds.size === filteredReceipts.length && filteredReceipts.length > 0}
+                      onChange={handleToggleSelectAll}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
                   </th>
@@ -342,7 +639,15 @@ export default function ReceiptsListPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredReceipts.map((receipt) => (
-                  <tr key={receipt.id} className="hover:bg-gray-50">
+                  <tr key={receipt.id} className={`hover:bg-gray-50 ${selectedReceiptIds.has(receipt.id) ? 'bg-blue-50' : ''}`}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedReceiptIds.has(receipt.id)}
+                        onChange={() => handleToggleSelect(receipt.id)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {receipt.extracted_date ? (
                         <div className="flex items-center gap-2">
@@ -372,18 +677,32 @@ export default function ReceiptsListPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {receipt.transaction_type && (
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
-                          receipt.transaction_type === 'receiving'
-                            ? 'bg-green-100 text-green-800'
-                            : receipt.transaction_type === 'sending'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {receipt.transaction_type === 'receiving' && '↓ Receiving'}
-                          {receipt.transaction_type === 'sending' && '↑ Sending'}
-                          {receipt.transaction_type === 'unknown' && '? Unknown'}
+                      {receipt.transaction_type === 'receiving' ? (
+                        // Income - show category
+                        receipt.income_category ? (
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
+                            receipt.is_salary
+                              ? 'bg-emerald-100 text-emerald-800 border-2 border-emerald-200'
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {receipt.is_salary && '💰 '}
+                            {receipt.income_category}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                            ↓ Income
+                          </span>
+                        )
+                      ) : receipt.transaction_type === 'sending' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                          ↑ Sending
                         </span>
+                      ) : receipt.transaction_type === 'unknown' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                          ? Unknown
+                        </span>
+                      ) : (
+                        '-'
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -399,6 +718,13 @@ export default function ReceiptsListPage() {
                           title="View details"
                         >
                           <Eye size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleEditReceipt(receipt)}
+                          className="text-amber-600 hover:text-amber-800"
+                          title="Edit receipt"
+                        >
+                          <Edit2 size={18} />
                         </button>
                         <button
                           onClick={() => handleDelete(receipt.id)}
@@ -520,6 +846,260 @@ export default function ReceiptsListPage() {
                   </pre>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Income Modal */}
+      {showIncomeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {editingIncome ? 'Edit Income' : 'Add Income Entry'}
+              </h2>
+              <button
+                onClick={handleCloseIncomeModal}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Amount (THB) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  value={incomeForm.amount || ''}
+                  onChange={(e) => setIncomeForm({...incomeForm, amount: parseFloat(e.target.value) || 0})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="3000"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={incomeForm.category}
+                  onChange={(e) => setIncomeForm({...incomeForm, category: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {incomeCategories.length > 0 ? (
+                    incomeCategories.map((cat) => (
+                      <option key={cat.id || cat.name} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="Other Income">Other Income</option>
+                  )}
+                </select>
+                <p className="mt-1 text-sm text-gray-500">
+                  Select the type of income
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={incomeForm.income_date}
+                  onChange={(e) => setIncomeForm({...incomeForm, income_date: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Note (optional)
+                </label>
+                <input
+                  type="text"
+                  value={incomeForm.note}
+                  onChange={(e) => setIncomeForm({...incomeForm, note: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Additional work, side project, etc."
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 p-6 border-t border-gray-200">
+              <button
+                onClick={handleSaveIncome}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                {editingIncome ? 'Update' : 'Add'} Income
+              </button>
+              <button
+                onClick={handleCloseIncomeModal}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Receipt Modal */}
+      {showEditModal && editingReceipt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Edit Receipt {editingReceipt.is_salary ? '(Salary)' : ''} {editingReceipt.is_manual_income ? '(Manual Income)' : ''}
+              </h2>
+              <button
+                onClick={handleCloseEditModal}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Amount (THB) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editForm.amount}
+                  onChange={(e) => setEditForm({...editForm, amount: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="1000.00"
+                />
+              </div>
+
+              {/* Date and Time */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={editForm.extracted_date}
+                    onChange={(e) => setEditForm({...editForm, extracted_date: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Time
+                  </label>
+                  <input
+                    type="time"
+                    value={editForm.extracted_time}
+                    onChange={(e) => setEditForm({...editForm, extracted_time: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Sender and Receiver */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sender
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.sender}
+                    onChange={(e) => setEditForm({...editForm, sender: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Sender name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Receiver
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.receiver}
+                    onChange={(e) => setEditForm({...editForm, receiver: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Receiver name"
+                  />
+                </div>
+              </div>
+
+              {/* Transaction Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Transaction Type
+                </label>
+                <select
+                  value={editForm.transaction_type}
+                  onChange={(e) => setEditForm({...editForm, transaction_type: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="sending">↑ Sending (Expense)</option>
+                  <option value="receiving">↓ Receiving (Income)</option>
+                  <option value="unknown">? Unknown</option>
+                </select>
+              </div>
+
+              {/* Income Category (only for receiving transactions) */}
+              {(editForm.transaction_type === 'receiving' || editingReceipt.income_category) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Income Category
+                  </label>
+                  <select
+                    value={editForm.income_category}
+                    onChange={(e) => setEditForm({...editForm, income_category: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">No category</option>
+                    {incomeCategories.map((cat) => (
+                      <option key={cat.id || cat.name} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Note */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Note
+                </label>
+                <textarea
+                  value={editForm.note}
+                  onChange={(e) => setEditForm({...editForm, note: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  rows={3}
+                  placeholder="Add any notes..."
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 p-6 border-t border-gray-200">
+              <button
+                onClick={handleSaveReceiptEdit}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Save Changes
+              </button>
+              <button
+                onClick={handleCloseEditModal}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
