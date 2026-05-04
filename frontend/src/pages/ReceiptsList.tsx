@@ -677,33 +677,51 @@ export default function ReceiptsListPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {receipt.transaction_type === 'receiving' ? (
-                        // Income - show category
-                        receipt.income_category ? (
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
-                            receipt.is_salary
-                              ? 'bg-emerald-100 text-emerald-800 border-2 border-emerald-200'
-                              : 'bg-green-100 text-green-800'
-                          }`}>
-                            {receipt.is_salary && '💰 '}
-                            {receipt.income_category}
+                      <div className="flex flex-col gap-1">
+                        {/* Transaction Type Badge */}
+                        {receipt.transaction_type === 'receiving' ? (
+                          // Income - show category
+                          receipt.income_category ? (
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
+                              receipt.is_salary
+                                ? 'bg-emerald-100 text-emerald-800 border-2 border-emerald-200'
+                                : 'bg-green-100 text-green-800'
+                            }`}>
+                              {receipt.is_salary && '💰 '}
+                              {receipt.income_category}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                              ↓ Income
+                            </span>
+                          )
+                        ) : receipt.transaction_type === 'sending' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                            ↑ Sending
+                          </span>
+                        ) : receipt.transaction_type === 'unknown' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                            ? Unknown
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                            ↓ Income
+                          <span className="text-gray-400">-</span>
+                        )}
+
+                        {/* OCR Engine Badge */}
+                        {receipt.ocr_engine && (
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full border ${
+                            receipt.ocr_engine === 'gemini'
+                              ? 'bg-purple-50 text-purple-700 border-purple-200'
+                              : receipt.ocr_engine === 'template+vlm'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-green-50 text-green-700 border-green-200'
+                          }`}>
+                            {receipt.ocr_engine === 'gemini' && '🤖 LLM'}
+                            {receipt.ocr_engine === 'template+vlm' && '📝+🤖'}
+                            {receipt.ocr_engine === 'template' && '📝 Tesseract'}
                           </span>
-                        )
-                      ) : receipt.transaction_type === 'sending' ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-                          ↑ Sending
-                        </span>
-                      ) : receipt.transaction_type === 'unknown' ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                          ? Unknown
-                        </span>
-                      ) : (
-                        '-'
-                      )}
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(receipt.status)}`}>

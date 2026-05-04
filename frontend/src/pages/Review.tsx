@@ -15,6 +15,7 @@ export default function ReviewPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(currentReceipt?.detected_template || '');
+  const [selectedOcrMethod, setSelectedOcrMethod] = useState<string>('auto');
   const [isReprocessing, setIsReprocessing] = useState(false);
   const [showZones, setShowZones] = useState(false);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
@@ -144,7 +145,11 @@ export default function ReviewPage() {
 
     setIsReprocessing(true);
     try {
-      const updated = await receiptService.reprocessReceipt(currentReceipt.id, selectedTemplate);
+      const updated = await receiptService.reprocessReceipt(
+        currentReceipt.id,
+        selectedTemplate,
+        selectedOcrMethod
+      );
       setCurrentReceipt(updated);
       setReceipts(prev =>
         prev.map(r => r.id === updated.id ? updated : r)
@@ -246,35 +251,77 @@ export default function ReviewPage() {
             </div>
 
             {/* Template Detection Display */}
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-blue-900">OCR Template</span>
-                <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                  {currentReceipt.ocr_engine || 'template'}
-                </span>
-              </div>
-
-              {currentReceipt.detected_template ? (
-                <div className="text-sm text-blue-800">
-                  Detected: <span className="font-semibold">
-                    {templates.find(t => t.id === currentReceipt.detected_template)?.name || currentReceipt.detected_template}
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-blue-900">OCR Engine</span>
+                <div className="flex items-center gap-2">
+                  {/* Primary OCR Engine Badge */}
+                  <span className={`text-xs px-3 py-1.5 rounded-full font-medium border ${
+                    currentReceipt.ocr_engine === 'gemini'
+                      ? 'bg-purple-100 text-purple-800 border-purple-300'
+                      : currentReceipt.ocr_engine === 'template+vlm'
+                      ? 'bg-amber-100 text-amber-800 border-amber-300'
+                      : 'bg-green-100 text-green-800 border-green-300'
+                  }`}>
+                    {currentReceipt.ocr_engine === 'gemini' && '🤖 LLM (Gemini)'}
+                    {currentReceipt.ocr_engine === 'template+vlm' && '🔄 Tesseract + LLM'}
+                    {(!currentReceipt.ocr_engine || currentReceipt.ocr_engine === 'template') && '📝 Tesseract'}
                   </span>
                 </div>
-              ) : (
-                <div className="text-sm text-blue-700">No template detected</div>
-              )}
+              </div>
+
+              {/* Processing Details */}
+              <div className="space-y-2">
+                {currentReceipt.detected_template ? (
+                  <div className="text-sm text-blue-900">
+                    <span className="font-medium">Template:</span>{' '}
+                    <span className="font-semibold">
+                      {templates.find(t => t.id === currentReceipt.detected_template)?.name || currentReceipt.detected_template}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-sm text-blue-700">No template detected</div>
+                )}
+
+                {/* OCR Method Description */}
+                <div className="text-xs text-blue-700">
+                  {currentReceipt.ocr_engine === 'gemini' && (
+                    <div className="flex items-start gap-1">
+                      <span>✦</span>
+                      <span>Processed by <strong>LLM (Gemini Flash Lite)</strong> only</span>
+                    </div>
+                  )}
+                  {currentReceipt.ocr_engine === 'template+vlm' && (
+                    <div className="flex items-start gap-1">
+                      <span>✦</span>
+                      <span>Processed by <strong>Tesseract</strong> with <strong>LLM fallback</strong> for missing fields</span>
+                    </div>
+                  )}
+                  {(!currentReceipt.ocr_engine || currentReceipt.ocr_engine === 'template') && (
+                    <div className="flex items-start gap-1">
+                      <span>✦</span>
+                      <span>Processed by <strong>Tesseract OCR</strong> only</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Template Selection and Reprocess */}
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Change Template & Reprocess
               </label>
-              <div className="flex gap-2">
+
+              {/* Template Selection */}
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Template
+                </label>
                 <select
                   value={selectedTemplate}
                   onChange={(e) => setSelectedTemplate(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
                   <option value="">Select a template...</option>
                   {templates.map(template => (
@@ -283,15 +330,38 @@ export default function ReviewPage() {
                     </option>
                   ))}
                 </select>
-                <button
-                  onClick={handleReprocess}
-                  disabled={!selectedTemplate || isReprocessing}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                >
-                  <RefreshCw size={16} className={isReprocessing ? 'animate-spin' : ''} />
-                  {isReprocessing ? 'Processing...' : 'Reprocess'}
-                </button>
               </div>
+
+              {/* OCR Method Selection */}
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  OCR Method
+                </label>
+                <select
+                  value={selectedOcrMethod}
+                  onChange={(e) => setSelectedOcrMethod(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  <option value="auto">🔄 Auto (Template + AI Fallback)</option>
+                  <option value="template">🎯 Template Only (Tesseract)</option>
+                  <option value="ai">🤖 AI Only (Gemini Flash Lite)</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  {selectedOcrMethod === 'auto' && 'Uses template OCR first, falls back to AI for missing fields'}
+                  {selectedOcrMethod === 'template' && 'Uses template OCR only (faster, may miss some fields)'}
+                  {selectedOcrMethod === 'ai' && 'Uses AI only (slower but more accurate)'}
+                </p>
+              </div>
+
+              {/* Reprocess Button */}
+              <button
+                onClick={handleReprocess}
+                disabled={!selectedTemplate || isReprocessing}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+              >
+                <RefreshCw size={16} className={isReprocessing ? 'animate-spin' : ''} />
+                {isReprocessing ? 'Processing...' : 'Reprocess OCR'}
+              </button>
             </div>
           </div>
 

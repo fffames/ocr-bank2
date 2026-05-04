@@ -11,6 +11,7 @@ import aiofiles
 from app.database.connection import get_db
 from app.models.receipt import Receipt
 from app.models.user_settings import UserSettings
+from app.services.gemini_vlm_service import get_gemini_vlm_service
 from app.services.vlm_service import get_vlm_service
 from app.services.lm_studio_vlm_service import get_lm_studio_vlm_service
 from app.services.template_ocr_service import get_template_ocr_service
@@ -48,19 +49,28 @@ async def upload_images(
     # Initialize services
     template_ocr_service = get_template_ocr_service()
 
-    # Prefer Groq VLM as fallback (more reliable than LM Studio)
+    # Try Gemini VLM first (user's preferred choice)
     try:
-        vlm_service = get_vlm_service()
-        print("☁️  Groq VLM available (fallback)")
+        vlm_service = get_gemini_vlm_service()
+        print("🌟 Gemini 1.5 Flash VLM available (primary fallback)")
     except Exception as e:
-        print(f"⚠️  Groq VLM not available: {e}")
+        print(f"⚠️  Gemini VLM not available: {e}")
         vlm_service = None
 
-    # LM Studio as secondary fallback
+    # Fallback to Groq VLM if Gemini is not available
+    if not vlm_service:
+        try:
+            vlm_service = get_vlm_service()
+            print("☁️  Groq VLM available (secondary fallback)")
+        except Exception as e:
+            print(f"⚠️  Groq VLM not available: {e}")
+            vlm_service = None
+
+    # LM Studio as last resort
     if not vlm_service:
         try:
             vlm_service = get_lm_studio_vlm_service()
-            print("🖥️  LM Studio VLM available (secondary fallback)")
+            print("🖥️  LM Studio VLM available (last resort)")
         except Exception as e:
             print(f"⚠️  LM Studio VLM not available: {e}")
             vlm_service = None
@@ -108,6 +118,42 @@ async def upload_images(
                     print("  🎯 Attempting template auto-detection...")
                     ocr_result = template_ocr_service.extract_from_image(upload_path)
                     print("  ✅ Template OCR successful")
+
+                # Check if any key fields are None - use VLM as fallback (if enabled)
+                key_fields = ['extracted_date', 'extracted_time', 'sender', 'receiver', 'amount']
+                missing_fields = [field for field in key_fields if ocr_result.get(field) is None]
+
+                if missing_fields and vlm_service and settings.vlm_fallback_enabled:
+                    print(f"  ⚠️  Template OCR missing fields: {', '.join(missing_fields)}")
+                    print("  🔄 Using Gemini Flash Lite as fallback for missing fields...")
+
+                    try:
+                        # Get VLM extraction for all fields
+                        vlm_result = vlm_service.extract_text_from_image(upload_path)
+
+                        # Fill in missing fields from VLM result
+                        for field in missing_fields:
+                            if vlm_result.get(field) is not None:
+                                ocr_result[field] = vlm_result[field]
+                                print(f"  ✅ VLM filled missing field: {field}")
+
+                        # Update raw_text to include VLM data
+                        if vlm_result.get("raw_text"):
+                            ocr_result["raw_text"] += " | " + vlm_result["raw_text"]
+
+                        # Update confidence score (lower for VLM fallback)
+                        ocr_result["confidence_score"] = 0.75  # Lower confidence when using VLM fallback
+                        ocr_result["ocr_engine"] = "template+vlm"
+
+                        print(f"  ✅ VLM fallback successful - filled {len(missing_fields)} missing fields")
+                    except Exception as vlm_error:
+                        print(f"  ❌ VLM fallback failed: {vlm_error}")
+                        # Continue with partial template OCR results
+                elif missing_fields:
+                    print(f"  ⚠️  Template OCR missing fields: {', '.join(missing_fields)}")
+                    print("  ℹ️  VLM fallback is disabled (VLM_FALLBACK_ENABLED=false)")
+                    print("  💡 Enable VLM fallback in .env: VLM_FALLBACK_ENABLED=true")
+
             except Exception as template_error:
                 print(f"  ⚠️  Template OCR failed: {template_error}")
                 if vlm_service:
@@ -336,10 +382,65 @@ async def process_ocr_for_receipt(
     if not os.path.exists(receipt.image_path):
         raise HTTPException(status_code=404, detail="Image file not found")
 
+    # Initialize VLM service for fallback
     try:
-        # Reprocess with VLM
         vlm_service = get_vlm_service()
-        ocr_result = vlm_service.extract_text_from_image(receipt.image_path)
+        print("☁️  Groq VLM available (fallback)")
+    except Exception as e:
+        print(f"⚠️  Groq VLM not available: {e}")
+        vlm_service = None
+
+    try:
+        # Try template-based OCR first if template is specified
+        if hasattr(receipt, 'detected_template') and receipt.detected_template:
+            try:
+                from app.services.template_ocr_service import get_template_ocr_service
+                template_ocr_service = get_template_ocr_service()
+                print(f"  🎯 Reprocessing with template: {receipt.detected_template}")
+                ocr_result = template_ocr_service.extract_from_image(receipt.image_path, template_id=receipt.detected_template)
+                print("  ✅ Template OCR successful")
+
+                # Check if any key fields are None - use VLM as fallback (if enabled)
+                key_fields = ['extracted_date', 'extracted_time', 'sender', 'receiver', 'amount']
+                missing_fields = [field for field in key_fields if ocr_result.get(field) is None]
+
+                if missing_fields and settings.vlm_fallback_enabled:
+                    print(f"  ⚠️  Template OCR missing fields: {', '.join(missing_fields)}")
+                    print("  🔄 Using VLM fallback for missing fields...")
+
+                    # Get VLM service
+                    vlm_service = get_gemini_vlm_service()
+                    vlm_result = vlm_service.extract_text_from_image(receipt.image_path)
+
+                    # Fill in missing fields from VLM result
+                    for field in missing_fields:
+                        if vlm_result.get(field) is not None:
+                            ocr_result[field] = vlm_result[field]
+                            print(f"  ✅ VLM filled missing field: {field}")
+
+                    # Update raw_text to include VLM data
+                    if vlm_result.get("raw_text"):
+                        ocr_result["raw_text"] += " | " + vlm_result["raw_text"]
+
+                    # Update confidence score
+                    ocr_result["confidence_score"] = 0.75
+                    ocr_result["ocr_engine"] = "template+vlm"
+
+                    print(f"  ✅ VLM fallback successful - filled {len(missing_fields)} missing fields")
+                elif missing_fields:
+                    print(f"  ⚠️  Template OCR missing fields: {', '.join(missing_fields)}")
+                    print("  ℹ️  VLM fallback is disabled (VLM_FALLBACK_ENABLED=false)")
+                    print("  💡 Enable VLM fallback in .env: VLM_FALLBACK_ENABLED=true")
+
+            except Exception as template_error:
+                print(f"  ⚠️  Template OCR failed: {template_error}")
+                print("  🔄 Using VLM as fallback...")
+                vlm_service = get_vlm_service()
+                ocr_result = vlm_service.extract_text_from_image(receipt.image_path)
+        else:
+            # No template detected, use VLM directly
+            vlm_service = get_vlm_service()
+            ocr_result = vlm_service.extract_text_from_image(receipt.image_path)
 
         # Apply LLM-based text cleaning using user's name from settings
         try:

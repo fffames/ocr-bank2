@@ -1,0 +1,51 @@
+bank_name: SCB
+description: ''
+detection:
+  keywords: []
+  primary_method: keywords
+image_size:
+- 860
+- 1485
+template_id: SCB_B
+version: '1.0'
+zones:
+  amount:
+    height_percent: 7.299469529110556
+    parser: thai_amount
+    preprocessor: grayscale
+    required: false
+    width_percent: 52.53310953267967
+    x_percent: 44.54178863119972
+    y_percent: 50.44997950588389
+  date:
+    height_percent: 3.8778431873399826
+    parser: thai_date
+    preprocessor: grayscale
+    required: false
+    width_percent: 22.79491535831986
+    x_percent: 31.703273084559804
+    y_percent: 20.719848402944024
+  receiver_name:
+    height_percent: 4.866313019407037
+    parser: text
+    preprocessor: grayscale
+    required: false
+    width_percent: 52.00908848995967
+    x_percent: 44.279778109839725
+    y_percent: 39.804919775931
+  sender_name:
+    height_percent: 5.246493724048212
+    parser: text
+    preprocessor: grayscale
+    required: false
+    width_percent: 53.18813583607967
+    x_percent: 43.49374654575973
+    y_percent: 30.642564794078687
+  time:
+    height_percent: 3.8778431873399826
+    parser: time
+    preprocessor: grayscale
+    required: false
+    width_percent: 10.873436636439932
+    x_percent: 56.332262092399645
+    y_percent: 20.567776121087554

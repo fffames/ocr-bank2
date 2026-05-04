@@ -251,20 +251,24 @@ def get_receipt_stats(db: Session = Depends(get_db)):
 async def reprocess_receipt_ocr(
     receipt_id: int,
     template_id: str,
+    ocr_method: str = "auto",  # Options: "auto", "template", "ai"
     db: Session = Depends(get_db)
 ):
     """
-    Re-process a receipt with a specific template.
+    Re-process a receipt with a specific template and OCR method.
 
     Args:
         receipt_id: ID of the receipt to reprocess
         template_id: Template ID to use for OCR
+        ocr_method: OCR method to use ("auto", "template", "ai")
         db: Database session
 
     Returns:
         Updated receipt with new OCR data
     """
     from app.services.template_ocr_service import get_template_ocr_service
+    from app.services.gemini_vlm_service import get_gemini_vlm_service
+    from app.config import settings
 
     # Get the receipt
     receipt = db.query(Receipt).filter(Receipt.id == receipt_id).first()
@@ -274,10 +278,84 @@ async def reprocess_receipt_ocr(
     # Use image_path as-is (it's already relative to project root: ./backend/images/...)
     image_path = receipt.image_path
 
-    # Re-process OCR with specified template
+    # Re-process OCR with specified template and method
     try:
-        template_service = get_template_ocr_service()
-        ocr_result = template_service.extract_from_image(image_path, template_id=template_id)
+        ocr_result = None
+        final_ocr_engine = "template"
+
+        # Method: AI Only (Gemini)
+        if ocr_method == "ai":
+            print(f"  🤖 Using AI Only (Gemini) method")
+            vlm_service = get_gemini_vlm_service()
+            ocr_result = vlm_service.extract_text_from_image(image_path)
+            final_ocr_engine = "gemini"
+
+        # Method: Template Only
+        elif ocr_method == "template":
+            print(f"  🎯 Using Template Only method")
+            template_service = get_template_ocr_service()
+            ocr_result = template_service.extract_from_image(image_path, template_id=template_id)
+            final_ocr_engine = "template"
+
+        # Method: Auto (Template + AI Fallback)
+        else:  # ocr_method == "auto"
+            print(f"  🔄 Using Auto (Template + AI Fallback) method")
+            template_service = get_template_ocr_service()
+
+            # Try template OCR first
+            try:
+                ocr_result = template_service.extract_from_image(image_path, template_id=template_id)
+                print("  ✅ Template OCR successful")
+
+                # Check if any key fields are None - use VLM as fallback
+                key_fields = ['extracted_date', 'extracted_time', 'sender', 'receiver', 'amount']
+                missing_fields = [field for field in key_fields if ocr_result.get(field) is None]
+
+                if missing_fields and settings.vlm_fallback_enabled:
+                    print(f"  ⚠️  Template OCR missing fields: {', '.join(missing_fields)}")
+                    print("  🔄 Using Gemini Flash Lite as fallback for missing fields...")
+
+                    try:
+                        # Get VLM extraction for all fields
+                        vlm_service = get_gemini_vlm_service()
+                        vlm_result = vlm_service.extract_text_from_image(image_path)
+
+                        # Fill in missing fields from VLM result
+                        for field in missing_fields:
+                            if vlm_result.get(field) is not None:
+                                ocr_result[field] = vlm_result[field]
+                                print(f"  ✅ VLM filled missing field: {field}")
+
+                        # Update raw_text to include VLM data
+                        if vlm_result.get("raw_text"):
+                            ocr_result["raw_text"] += " | " + vlm_result["raw_text"]
+
+                        # Update confidence score (lower for VLM fallback)
+                        ocr_result["confidence_score"] = 0.75
+                        final_ocr_engine = "template+vlm"
+
+                        print(f"  ✅ VLM fallback successful - filled {len(missing_fields)} missing fields")
+                    except Exception as vlm_error:
+                        print(f"  ❌ VLM fallback failed: {vlm_error}")
+                        # Continue with partial template OCR results
+                elif missing_fields:
+                    print(f"  ⚠️  Template OCR missing fields: {', '.join(missing_fields)}")
+                    print("  ℹ️  VLM fallback is disabled (VLM_FALLBACK_ENABLED=false)")
+
+            except Exception as template_error:
+                print(f"  ⚠️  Template OCR failed: {template_error}")
+                # Fallback to VLM
+                try:
+                    vlm_service = get_gemini_vlm_service()
+                    ocr_result = vlm_service.extract_text_from_image(image_path)
+                    final_ocr_engine = "gemini"
+                    print("  ✅ VLM fallback successful")
+                except Exception as vlm_error:
+                    print(f"  ❌ VLM also failed: {vlm_error}")
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Both Template OCR and VLM failed: {str(vlm_error)}"
+                    )
 
         # Update receipt with new OCR data
         if ocr_result.get("extracted_date"):
@@ -297,9 +375,9 @@ async def reprocess_receipt_ocr(
             from decimal import Decimal
             receipt.confidence_score = Decimal(str(ocr_result["confidence_score"]))
 
-        # Update template info
+        # Update template and engine info
         receipt.detected_template = template_id
-        receipt.ocr_engine = "template"
+        receipt.ocr_engine = final_ocr_engine
         receipt.updated_at = datetime.now()
 
         db.commit()

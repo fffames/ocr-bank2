@@ -52,10 +52,13 @@ export const receiptService = {
     return response.data;
   },
 
-  // Reprocess receipt OCR with specific template
-  reprocessReceipt: async (id: number, templateId: string) => {
+  // Reprocess receipt OCR with specific template and method
+  reprocessReceipt: async (id: number, templateId: string, ocrMethod: string = 'auto') => {
     const response = await api.post(`/receipts/${id}/reprocess-ocr`, null, {
-      params: { template_id: templateId }
+      params: {
+        template_id: templateId,
+        ocr_method: ocrMethod
+      }
     });
     return response.data;
   },

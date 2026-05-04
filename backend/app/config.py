@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     # OCR Engine
     ocr_engine: Literal["tesseract", "paddleocr"] = "paddleocr"
 
+    # VLM Fallback
+    vlm_fallback_enabled: bool = True
+
     # LLM
     gemini_api_key: str = ""
     groq_api_key: str = ""
