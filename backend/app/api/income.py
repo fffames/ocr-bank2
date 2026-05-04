@@ -109,6 +109,11 @@ async def create_income(income: ManualIncomeCreate, db: Session = Depends(get_db
     if not category:
         raise HTTPException(status_code=400, detail=f"Category '{income.category}' not found")
 
+    # Get user's name from settings to use as receiver
+    from app.models.user_settings import UserSettings
+    user_settings = db.query(UserSettings).first()
+    user_name = user_settings.user_name if user_settings else None
+
     new_income = Receipt(
         filename=f"income_{income.income_date.isoformat()}.txt",
         image_path="",
@@ -116,7 +121,7 @@ async def create_income(income: ManualIncomeCreate, db: Session = Depends(get_db
         extracted_date=income.income_date,
         extracted_time=None,
         sender=None,
-        receiver=None,
+        receiver=user_name,  # Use user's name from settings as receiver
         amount=Decimal(str(income.amount)),
         note=income.note,
         confidence_score=None,
@@ -195,6 +200,12 @@ async def update_income(
 
     if income.note is not None:
         db_income.note = income.note
+
+    # Ensure receiver is always set to user's name from settings
+    from app.models.user_settings import UserSettings
+    user_settings = db.query(UserSettings).first()
+    if user_settings and user_settings.user_name:
+        db_income.receiver = user_settings.user_name
 
     db_income.updated_at = datetime.now()
     db.commit()

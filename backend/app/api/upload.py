@@ -176,6 +176,39 @@ async def upload_images(
             # Move file to permanent storage
             os.rename(upload_path, final_path)
 
+            # Validate and clean OCR result before database insertion
+            def clean_ocr_for_db(result: dict) -> dict:
+                """Clean OCR result to prevent database errors."""
+                cleaned = result.copy()
+
+                # Convert empty strings to None for string fields
+                for field in ['sender', 'receiver', 'note']:
+                    if cleaned.get(field) == '' or cleaned.get(field) == 'None':
+                        cleaned[field] = None
+
+                # Handle amount: empty string or invalid → None
+                amount = cleaned.get('amount')
+                if amount == '' or amount == 'None' or amount is None:
+                    cleaned['amount'] = None
+                elif isinstance(amount, str):
+                    # Try to parse amount, if fails set to None
+                    try:
+                        from decimal import Decimal
+                        # Remove common currency symbols and commas
+                        cleaned_amount = amount.replace(',', '').replace('฿', '').replace('บาท', '').strip()
+                        if cleaned_amount:
+                            cleaned['amount'] = Decimal(cleaned_amount)
+                        else:
+                            cleaned['amount'] = None
+                    except:
+                        print(f"  ⚠️  Invalid amount format: '{amount}', setting to None")
+                        cleaned['amount'] = None
+
+                return cleaned
+
+            # Clean OCR result before database insertion
+            ocr_result = clean_ocr_for_db(ocr_result)
+
             # Apply LLM-based text cleaning using user's name from settings
             try:
                 from app.services.text_cleaning_service import get_text_cleaning_service
@@ -196,7 +229,7 @@ async def upload_images(
                     extracted_data = {
                         "sender": ocr_result.get("sender", ""),
                         "receiver": ocr_result.get("receiver", ""),
-                        "amount": str(ocr_result.get("amount", "")) if ocr_result.get("amount") else "",
+                        "amount": str(ocr_result.get("amount", "")) if ocr_result.get("amount") is not None else None,
                         "note": ocr_result.get("note", ""),
                         "extracted_date": ocr_result.get("extracted_date", ""),
                         "extracted_time": ocr_result.get("extracted_time", "")
@@ -209,10 +242,10 @@ async def upload_images(
                     )
 
                     # Use cleaned data for database record
-                    ocr_result["sender"] = cleaned_data.get("sender", "")
-                    ocr_result["receiver"] = cleaned_data.get("receiver", "")
-                    ocr_result["amount"] = cleaned_data.get("amount", "")
-                    ocr_result["note"] = cleaned_data.get("note", "")
+                    ocr_result["sender"] = cleaned_data.get("sender") if cleaned_data.get("sender") else None
+                    ocr_result["receiver"] = cleaned_data.get("receiver") if cleaned_data.get("receiver") else None
+                    ocr_result["amount"] = cleaned_data.get("amount")  # Keep None if not present
+                    ocr_result["note"] = cleaned_data.get("note") if cleaned_data.get("note") else None
                     if cleaned_data.get("extracted_date"):
                         ocr_result["extracted_date"] = cleaned_data["extracted_date"]
                     if cleaned_data.get("extracted_time"):
@@ -474,10 +507,10 @@ async def process_ocr_for_receipt(
                 )
 
                 # Use cleaned data
-                ocr_result["sender"] = cleaned_data.get("sender", "")
-                ocr_result["receiver"] = cleaned_data.get("receiver", "")
-                ocr_result["amount"] = cleaned_data.get("amount", "")
-                ocr_result["note"] = cleaned_data.get("note", "")
+                ocr_result["sender"] = cleaned_data.get("sender") if cleaned_data.get("sender") else None
+                ocr_result["receiver"] = cleaned_data.get("receiver") if cleaned_data.get("receiver") else None
+                ocr_result["amount"] = cleaned_data.get("amount")  # Keep None if not present
+                ocr_result["note"] = cleaned_data.get("note") if cleaned_data.get("note") else None
                 if cleaned_data.get("extracted_date"):
                     ocr_result["extracted_date"] = cleaned_data["extracted_date"]
                 if cleaned_data.get("extracted_time"):

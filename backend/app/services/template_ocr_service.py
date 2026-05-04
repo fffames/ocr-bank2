@@ -123,7 +123,11 @@ class TemplateOCRService:
                     null_fields_before = self._count_null_fields(merged_result)
 
                     for key, value in result.items():
-                        if value is not None and merged_result.get(key) is None:
+                        # Check if current value is "effectively null" (None or empty string)
+                        current_value = merged_result.get(key)
+                        is_effectively_null = current_value is None or (isinstance(current_value, str) and current_value.strip() == "")
+
+                        if value is not None and is_effectively_null:
                             merged_result[key] = value
                             print(f"    ✅ Filled '{key}': {value}")
 
@@ -213,8 +217,8 @@ class TemplateOCRService:
                     print(f"    ⚠️  Error parsing '{field_name}': {e}")
                     parsed[field_name] = None  # Return None on error, not raw text
             else:
-                # No parser, return corrected text
-                parsed[field_name] = corrected_text
+                # No parser, return corrected text (or None if empty)
+                parsed[field_name] = corrected_text if corrected_text.strip() else None
 
         return parsed
 
@@ -392,13 +396,15 @@ class TemplateOCRService:
             result: Extraction result
 
         Returns:
-            Number of null key fields
+            Number of null key fields (treats empty strings as null)
         """
         key_fields = ['extracted_date', 'extracted_time', 'sender', 'receiver', 'amount']
         null_count = 0
 
         for field in key_fields:
-            if result.get(field) is None:
+            value = result.get(field)
+            # Treat None and empty strings as null
+            if value is None or (isinstance(value, str) and value.strip() == ""):
                 null_count += 1
 
         return null_count

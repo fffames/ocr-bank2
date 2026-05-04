@@ -21,7 +21,7 @@ openai>=1.0.0
 
 # LLM & RAG
 google-generativeai>=0.3.2
-chromadb>=0.4.22
+chromadb==0.4.22
 groq>=0.11.0
 
 # Google Sheets

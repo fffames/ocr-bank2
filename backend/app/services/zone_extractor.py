@@ -20,8 +20,8 @@ class ZoneExtractor:
         self.ocr_engine = ocr_engine.lower()
 
         if self.ocr_engine == "paddleocr":
-            # Initialize PaddleOCR for Thai
-            self.ocr = PaddleOCR(lang='th')
+            # Initialize PaddleOCR for Thai (same as old working code)
+            self.ocr = PaddleOCR(lang='th', det_model_dir=None, rec_model_dir=None)
             print("✅ ZoneExtractor initialized with PaddleOCR (Thai)")
         else:
             # Configure Tesseract for Thai + English
@@ -197,38 +197,80 @@ class ZoneExtractor:
             return ""
 
     def ocr_zone_paddleocr(self, image: Image.Image) -> str:
-        """Run PaddleOCR on cropped zone."""
-        try:
-            # Convert PIL Image to numpy array
-            # Ensure image is in RGB mode
-            if image.mode != 'RGB':
-                image = image.convert('RGB')
-            img_array = np.array(image)
+        """Run PaddleOCR on cropped zone.
 
-            # Run PaddleOCR
-            result = self.ocr.ocr(img_array)
+        IMPORTANT: PaddleOCR works best with file paths, not numpy arrays.
+        This saves the cropped image to a temp file and passes the path.
+        """
+        try:
+            # Save cropped image to temp file
+            # PaddleOCR handles image loading and preprocessing internally
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmp:
+                # Ensure image is in RGB mode before saving
+                if image.mode != 'RGB':
+                    image = image.convert('RGB')
+                image.save(tmp.name)
+                tmp_path = tmp.name
+
+            # Run PaddleOCR with file path (like the old working code)
+            result = self.ocr.ocr(tmp_path)
+
+            # Clean up temp file
+            try:
+                os.unlink(tmp_path)
+            except:
+                pass
 
             if not result or not result[0]:
                 print("  OCR result (PaddleOCR): '' (no text detected)")
                 return ""
 
-            # Extract all text and join with spaces
-            # PaddleOCR returns list of [[bbox, (text, confidence)], ...]
+            # Extract text - handle both old and new PaddleOCR formats (like old working code)
             texts = []
-            for line in result[0]:
-                if line and len(line) > 1:
-                    text_info = line[1]
-                    if text_info and len(text_info) > 0:
-                        text = text_info[0]
-                        if text:
-                            texts.append(text)
+
+            # Try new PaddleOCR 3.0+ format (dict with 'rec_texts')
+            if result and len(result) > 0 and isinstance(result[0], dict):
+                ocr_data = result[0]
+
+                if 'rec_texts' in ocr_data and 'rec_scores' in ocr_data:
+                    rec_texts = ocr_data['rec_texts']
+                    rec_scores = ocr_data['rec_scores']
+
+                    for i, text_content in enumerate(rec_texts):
+                        if text_content:
+                            texts.append(str(text_content))
+
+                    print(f"  ✅ Extracted {len(texts)} text lines from image")
+                    for i, text in enumerate(texts[:10]):
+                        print(f"    [{i}] {text}")
+                    if len(texts) > 10:
+                        print(f"    ... and {len(texts) - 10} more lines")
+                else:
+                    print("  ⚠️  No 'rec_texts' or 'rec_scores' in OCR result")
+
+            # Try old format (list of [[bbox, (text, confidence)], ...])
+            elif result and len(result) > 0 and isinstance(result[0], list):
+                for line in result[0]:
+                    if line and len(line) > 1:
+                        text_info = line[1]
+                        if text_info and len(text_info) > 0:
+                            text = text_info[0]
+                            if text:
+                                texts.append(text)
+            else:
+                print("  ⚠️  Unexpected OCR result format")
+                print(f"  Result type: {type(result)}")
 
             cleaned_text = ' '.join(texts).strip()
-            print(f"  OCR result (PaddleOCR): '{cleaned_text[:50]}...' " if len(cleaned_text) > 50 else f"  OCR result (PaddleOCR): '{cleaned_text}'")
+            if cleaned_text:
+                print(f"  OCR result (PaddleOCR): '{cleaned_text[:50]}...' " if len(cleaned_text) > 50 else f"  OCR result (PaddleOCR): '{cleaned_text}'")
             return cleaned_text
 
         except Exception as e:
             print(f"  ❌ PaddleOCR error: {e}")
+            import traceback
+            traceback.print_exc()
             return ""
 
     def ocr_zone(self, image: Image.Image) -> str:

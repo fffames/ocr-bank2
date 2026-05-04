@@ -194,30 +194,59 @@ def delete_receipt(receipt_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/stats/overview")
-def get_receipt_stats(db: Session = Depends(get_db)):
+def get_receipt_stats(
+    year: int = None,
+    month: int = None,
+    db: Session = Depends(get_db)
+):
     """
     Get overview statistics for receipts.
 
     Args:
+        year: Filter by year (optional)
+        month: Filter by month (optional)
         db: Database session
 
     Returns:
         Statistics including total receipts, total amount, and status counts
         Separated by transaction type (sending vs receiving)
+        Includes income breakdown by category
     """
-    total_receipts = db.query(Receipt).count()
-
     from sqlalchemy import func
+    from datetime import date
+
+    # Build date filter if year/month provided
+    date_filter = True
+    if year and month:
+        from calendar import monthrange
+        start_date = date(year, month, 1)
+        end_date = date(year, month, monthrange(year, month)[1])
+    else:
+        start_date = None
+        end_date = None
+        date_filter = False
+
+    # Base query with optional date filter
+    def apply_date_filter(query):
+        if date_filter:
+            return query.filter(
+                Receipt.extracted_date >= start_date,
+                Receipt.extracted_date <= end_date
+            )
+        return query
+
+    # Total receipts
+    total_receipts = apply_date_filter(db.query(Receipt)).count()
 
     # Calculate sending amount (paying out)
-    sending_amount_result = db.query(func.sum(Receipt.amount)).filter(
+    sending_amount_result = apply_date_filter(db.query(func.sum(Receipt.amount))).filter(
         Receipt.transaction_type == "sending",
         Receipt.amount.isnot(None)
     ).first()
     sending_amount = float(sending_amount_result[0]) if sending_amount_result[0] else 0.0
 
     # Calculate receiving amount (income)
-    receiving_amount_result = db.query(func.sum(Receipt.amount)).filter(
+    receiving_amount_result = apply_date_filter(db.query(func.sum(Receipt.amount))).filter(
         Receipt.transaction_type == "receiving",
         Receipt.amount.isnot(None)
     ).first()
@@ -226,13 +255,43 @@ def get_receipt_stats(db: Session = Depends(get_db)):
     # Net amount = receiving - sending
     net_amount = receiving_amount - sending_amount
 
-    pending_count = db.query(Receipt).filter(Receipt.status == "pending").count()
-    reviewed_count = db.query(Receipt).filter(Receipt.status == "reviewed").count()
-    confirmed_count = db.query(Receipt).filter(Receipt.status == "confirmed").count()
+    pending_count = apply_date_filter(db.query(Receipt)).filter(Receipt.status == "pending").count()
+    reviewed_count = apply_date_filter(db.query(Receipt)).filter(Receipt.status == "reviewed").count()
+    confirmed_count = apply_date_filter(db.query(Receipt)).filter(Receipt.status == "confirmed").count()
 
     # Count by transaction type
-    sending_count = db.query(Receipt).filter(Receipt.transaction_type == "sending").count()
-    receiving_count = db.query(Receipt).filter(Receipt.transaction_type == "receiving").count()
+    sending_count = apply_date_filter(db.query(Receipt)).filter(Receipt.transaction_type == "sending").count()
+    receiving_count = apply_date_filter(db.query(Receipt)).filter(Receipt.transaction_type == "receiving").count()
+
+    # Income breakdown by category (including manual income and salary)
+    income_by_category = []
+
+    # Get all receiving transactions with income category
+    receiving_with_category = apply_date_filter(db.query(Receipt)).filter(
+        Receipt.transaction_type == "receiving",
+        Receipt.income_category.isnot(None),
+        Receipt.amount.isnot(None)
+    ).all()
+
+    # Group by income_category
+    category_totals = {}
+    for receipt in receiving_with_category:
+        category = receipt.income_category or "Other Income"
+        if category not in category_totals:
+            category_totals[category] = {"total_amount": 0, "count": 0}
+        category_totals[category]["total_amount"] += float(receipt.amount)
+        category_totals[category]["count"] += 1
+
+    # Convert to list format
+    for category, data in category_totals.items():
+        income_by_category.append({
+            "category": category,
+            "total_amount": data["total_amount"],
+            "count": data["count"]
+        })
+
+    # Sort by total amount descending
+    income_by_category.sort(key=lambda x: x["total_amount"], reverse=True)
 
     return {
         "total_receipts": total_receipts,
@@ -243,7 +302,8 @@ def get_receipt_stats(db: Session = Depends(get_db)):
         "reviewed_count": reviewed_count,
         "confirmed_count": confirmed_count,
         "sending_count": sending_count,
-        "receiving_count": receiving_count
+        "receiving_count": receiving_count,
+        "income_by_category": income_by_category  # Now includes manual income!
     }
 
 
@@ -366,7 +426,7 @@ async def reprocess_receipt_ocr(
             receipt.sender = ocr_result["sender"]
         if ocr_result.get("receiver"):
             receipt.receiver = ocr_result["receiver"]
-        if ocr_result.get("amount"):
+        if ocr_result.get("amount") and str(ocr_result.get("amount")).strip():
             from decimal import Decimal
             receipt.amount = Decimal(str(ocr_result["amount"]))
         if ocr_result.get("note"):

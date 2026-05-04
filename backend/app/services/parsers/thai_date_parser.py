@@ -29,7 +29,8 @@ class ThaiDateParser(BaseParser):
         Parse Thai date formats.
 
         Supports:
-        - "28 ม.ค. 69" (short year, Buddhist era)
+        - "28 ม.ค. 69" (with spaces, short year, Buddhist era)
+        - "1เม.ย.69" (without spaces, short year, Buddhist era)
         - "28 มกราคม 2567" (full year, Buddhist era)
         - "28/01/2024" (Christian era)
         - "28-01-2024" (Christian era)
@@ -50,6 +51,9 @@ class ThaiDateParser(BaseParser):
         # Apply OCR error correction for Thai characters
         cleaned = self._correct_ocr_errors(cleaned)
 
+        # Debug: show what we're trying to parse
+        print(f"    Trying to parse date: '{cleaned}'")
+
         # Try different patterns
         result = self._try_thai_month_pattern(cleaned)
         if result:
@@ -59,6 +63,7 @@ class ThaiDateParser(BaseParser):
         if result:
             return result
 
+        print(f"    ❌ Failed to parse date: '{cleaned}'")
         return None
 
     def _correct_ocr_errors(self, text: str) -> str:
@@ -147,8 +152,8 @@ class ThaiDateParser(BaseParser):
         Pattern: DD Month YYYY (e.g., "28 ม.ค. 2567" or "28ม.ค.67")
         """
         # Pattern: DD Month YY/YYYY (with or without spaces)
-        # Handle: "28 ม.ค. 69", "28ม.ค.69", "1เม.ย. 69"
-        pattern = r'(\d{1,2})\s*([^\d\s,]+\.?)\s+(\d{2,4})'
+        # Handle: "28 ม.ค. 69", "28ม.ค.69", "1เม.ย.69" (no spaces, month with internal dots)
+        pattern = r'(\d{1,2})\s*([^\d\s]+(?:\.[^\d\s]+)*)\s*(\d{2,4})'
 
         match = re.search(pattern, text)
         if not match:
@@ -159,26 +164,39 @@ class ThaiDateParser(BaseParser):
             month_text = match.group(2)
             year = int(match.group(3))
 
+            print(f"      Parsed: day={day}, month_text='{month_text}', year={year}")
+
             # Convert Thai month to number
             month = self.THAI_MONTHS.get(month_text)
             if not month:
+                print(f"      ⚠️  Month '{month_text}' not found in THAI_MONTHS")
                 return None
+
+            print(f"      → month number: {month}")
 
             # Convert Buddhist era to Christian era if needed
             if year >= 2400:  # Full 4-digit Buddhist era
                 year = year - 543
+                print(f"      → Full Buddhist era, converted to {year}")
             elif year < 100:  # Two-digit year (likely Buddhist era for Thai receipts)
-                # Assume Buddhist era: 69 = 2567, 67 = 2567, etc.
+                # Assume Buddhist era: 69 = 2569, 67 = 2567, etc.
+                original_year = year
                 year = 2500 + year - 543  # Convert to Christian era
+                print(f"      → 2-digit Buddhist era {original_year}, converted to {year}")
             else:
                 # Already in Christian era (3-digit years are unusual but handle them)
-                year = year
+                print(f"      → Assuming Christian era: {year}")
 
             # Validate date
             if self._is_valid_date(day, month, year):
-                return date(year, month, day)
+                result = date(year, month, day)
+                print(f"      ✅ Successfully parsed: {result}")
+                return result
+            else:
+                print(f"      ⚠️  Invalid date: {day}/{month}/{year}")
 
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError) as e:
+            print(f"      ❌ Error parsing date: {e}")
             pass
 
         return None

@@ -72,6 +72,7 @@ async def update_salary_config(config: SalaryConfig, db: Session = Depends(get_d
             from decimal import Decimal
             existing_salary.amount = Decimal(str(config.default_salary_amount))
             existing_salary.income_category = config.salary_category
+            existing_salary.receiver = settings.user_name  # Ensure receiver is set to user's name
             existing_salary.note = f"Monthly salary for {year}-{month:02d}"
             existing_salary.updated_at = date.today()
 
@@ -173,7 +174,7 @@ async def check_and_generate_salary(
         extracted_date=salary_date,
         extracted_time=None,
         sender=None,
-        receiver=None,
+        receiver=settings.user_name,  # Use user's name from settings as receiver
         amount=Decimal(str(settings.default_salary_amount)),
         note=f"Monthly salary for {year}-{month:02d}",
         confidence_score=None,

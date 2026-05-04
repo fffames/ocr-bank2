@@ -139,26 +139,10 @@ class GoogleSheetsService:
                     }
                 })
 
-                # Color code transaction types
-                for i, row in enumerate(rows, start=2):
-                    if row[6] == 'receiving':
-                        # Green for income
-                        worksheet.format(f'A{i}:K{i}', {
-                            'backgroundColor': {
-                                'red': 0.9,
-                                'green': 1.0,
-                                'blue': 0.9
-                            }
-                        })
-                    elif row[6] == 'sending':
-                        # Red for expenses
-                        worksheet.format(f'A{i}:K{i}', {
-                            'backgroundColor': {
-                                'red': 1.0,
-                                'green': 0.9,
-                                'blue': 0.9
-                            }
-                        })
+                # Note: Row-by-row color formatting has been removed to avoid hitting
+                # Google Sheets API quota limits ("Write requests per minute per user").
+                # With 119 rows, individual formatting would make 119+ API calls and exceed quotas.
+                # Consider using conditional formatting in Google Sheets UI directly if needed.
 
             # Freeze header row
             worksheet.freeze(1)

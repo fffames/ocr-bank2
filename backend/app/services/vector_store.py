@@ -55,23 +55,16 @@ class VectorStore:
         return ". ".join(parts)
 
     def _generate_embedding(self, text: str) -> List[float]:
-        """Generate embedding for text.
+        """Generate embedding for text using sentence-transformers."""
+        # Lazy import to avoid startup overhead
+        if not hasattr(self, '_embedding_model'):
+            from sentence_transformers import SentenceTransformer
+            # Use multilingual model for Thai + English support
+            self._embedding_model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+            print("✅ Loaded sentence-transformers model (paraphrase-multilingual-MiniLM-L12-v2)")
 
-        For now, we'll use a simple approach. In production, you'd want to use
-        a proper embedding model like sentence-transformers or an API.
-        """
-        # Simple character-based embedding (not ideal, but works for demo)
-        # In production, replace with: from sentence_transformers import SentenceTransformer
-        # model = SentenceTransformer('all-MiniLM-L6-v2')
-        # return model.encode(text).tolist()
-
-        # For now, create a simple hash-based embedding
-        import hashlib
-        hash_obj = hashlib.sha256(text.encode())
-        hash_hex = hash_obj.hexdigest()
-
-        # Convert to list of floats
-        embedding = [float(int(c, 16)) / 16.0 for c in hash_hex[:512]]
+        # Generate embedding
+        embedding = self._embedding_model.encode(text).tolist()
         return embedding
 
     def index_receipt(self, receipt_id: int, receipt_data: Dict[str, Any]) -> None:
@@ -134,9 +127,19 @@ class VectorStore:
     def delete_receipt(self, receipt_id: int) -> None:
         """Delete a receipt from the vector store."""
         try:
+            # Try to delete from collection
             self.collection.delete(ids=[str(receipt_id)])
+            print(f"✅ Deleted receipt {receipt_id} from vector store")
         except Exception as e:
-            print(f"Error deleting receipt {receipt_id}: {e}")
+            # Handle ChromaDB Rust bindings error gracefully
+            error_msg = str(e)
+            if 'bindings' in error_msg or 'RustBindingsAPI' in error_msg:
+                print(f"⚠️  ChromaDB Rust bindings error (receipt {receipt_id}): {e}")
+                print("   This is a known ChromaDB issue. Receipt deleted from DB but may remain in vector store.")
+                print("   Run 'python clean_vector_store.py' to clean up orphaned entries.")
+            else:
+                print(f"⚠️  Could not delete receipt {receipt_id} from vector store: {e}")
+            # Don't raise - allow deletion to proceed even if vector store fails
 
     def get_count(self) -> int:
         """Get the number of receipts in the vector store."""
