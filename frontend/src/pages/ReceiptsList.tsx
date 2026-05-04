@@ -22,6 +22,9 @@ export default function ReceiptsListPage() {
   const [yearFilter, setYearFilter] = useState<string>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [pageSize, setPageSize] = useState<number>(100);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalReceipts, setTotalReceipts] = useState<number>(0);
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
   const [selectedReceiptIds, setSelectedReceiptIds] = useState<Set<number>>(new Set());
@@ -54,10 +57,14 @@ export default function ReceiptsListPage() {
 
   useEffect(() => {
     fetchReceipts();
-    checkAndGenerateSalaryForFilters();
     // Clear selections when filters change
     setSelectedReceiptIds(new Set());
-  }, [statusFilter, yearFilter, monthFilter, typeFilter]);
+  }, [statusFilter, yearFilter, monthFilter, typeFilter, pageSize, currentPage]);
+
+  // Reset to page 1 when filters or page size changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, yearFilter, monthFilter, typeFilter, pageSize]);
 
   // Debug logging (without filteredReceipts to avoid initialization issues)
   useEffect(() => {
@@ -76,8 +83,11 @@ export default function ReceiptsListPage() {
     setLoading(true);
     try {
       console.log('🔍 Fetching receipts...');
+
+      // For client-side pagination, fetch all matching data
+      // Backend has a max limit of 1000 per request
       const params: any = {
-        limit: 100,
+        limit: 1000, // Backend maximum limit
       };
 
       if (statusFilter !== 'all') {
@@ -114,30 +124,12 @@ export default function ReceiptsListPage() {
       const data = await receiptService.getReceipts(params);
       console.log(`✅ Fetched ${data.length} receipts`);
       setReceipts(data);
+      setTotalReceipts(data.length); // Set total for pagination
     } catch (error) {
       console.error('❌ Error fetching receipts:', error);
       setReceipts([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const checkAndGenerateSalaryForFilters = async () => {
-    // Only check/generate salary if both year and month are selected
-    if (yearFilter !== 'all' && monthFilter !== 'all') {
-      try {
-        const year = parseInt(yearFilter);
-        const month = parseInt(monthFilter);
-
-        const result = await analyticsService.checkAndGenerateSalary(year, month);
-        if (result.status === 'created') {
-          console.log(`✅ Salary created for ${year}-${month}`);
-          // Reload receipts to show the new salary entry
-          fetchReceipts();
-        }
-      } catch (error) {
-        console.error('Failed to check/generate salary:', error);
-      }
     }
   };
 
@@ -159,10 +151,20 @@ export default function ReceiptsListPage() {
 
   // Selection and bulk delete functions
   const handleToggleSelectAll = () => {
-    if (selectedReceiptIds.size === filteredReceipts.length) {
-      setSelectedReceiptIds(new Set());
+    // Check if all current page items are selected
+    const currentPageIds = new Set(paginatedReceipts.map(r => r.id));
+    const allCurrentPageSelected = paginatedReceipts.every(r => selectedReceiptIds.has(r.id));
+
+    if (allCurrentPageSelected) {
+      // Deselect all items on current page
+      const newSelection = new Set(selectedReceiptIds);
+      currentPageIds.forEach(id => newSelection.delete(id));
+      setSelectedReceiptIds(newSelection);
     } else {
-      setSelectedReceiptIds(new Set(filteredReceipts.map(r => r.id)));
+      // Select all items on current page
+      const newSelection = new Set(selectedReceiptIds);
+      paginatedReceipts.forEach(r => newSelection.add(r.id));
+      setSelectedReceiptIds(newSelection);
     }
   };
 
@@ -442,6 +444,19 @@ export default function ReceiptsListPage() {
     receipt.note?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Pagination logic
+  const totalPages = pageSize === -1 ? 1 : Math.ceil(filteredReceipts.length / pageSize);
+  const startIndex = pageSize === -1 ? 0 : (currentPage - 1) * pageSize;
+  const endIndex = pageSize === -1 ? filteredReceipts.length : startIndex + pageSize;
+  const paginatedReceipts = filteredReceipts.slice(startIndex, endIndex);
+
+  // Ensure currentPage is valid
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
@@ -531,6 +546,18 @@ export default function ReceiptsListPage() {
               <option value="unknown">? Unknown</option>
             </select>
 
+            {/* Page Size Selector */}
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(e.target.value === 'all' ? -1 : parseInt(e.target.value))}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 font-medium"
+            >
+              <option value={20}>20 rows</option>
+              <option value={50}>50 rows</option>
+              <option value={100}>100 rows</option>
+              <option value="all">All rows</option>
+            </select>
+
             {/* Clear Filters Button */}
             {(statusFilter !== 'all' || yearFilter !== 'all' || monthFilter !== 'all' || typeFilter !== 'all') && (
               <button
@@ -602,14 +629,27 @@ export default function ReceiptsListPage() {
             <p className="text-gray-600">No receipts found</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            {/* Results count with pagination info */}
+            <div className="mb-4 flex items-center justify-between text-sm text-gray-600">
+              <div>
+                Showing <span className="font-semibold text-gray-900">{startIndex + 1}</span>
+                to <span className="font-semibold text-gray-900">{Math.min(endIndex, filteredReceipts.length)}</span>
+                of <span className="font-semibold text-gray-900">{filteredReceipts.length}</span> receipts
+                {pageSize !== -1 && (
+                  <span className="ml-2">(page {currentPage} of {totalPages})</span>
+                )}
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
                     <input
                       type="checkbox"
-                      checked={selectedReceiptIds.size === filteredReceipts.length && filteredReceipts.length > 0}
+                      checked={paginatedReceipts.length > 0 && paginatedReceipts.every(r => selectedReceiptIds.has(r.id))}
                       onChange={handleToggleSelectAll}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
@@ -638,7 +678,7 @@ export default function ReceiptsListPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredReceipts.map((receipt) => (
+                {paginatedReceipts.map((receipt) => (
                   <tr key={receipt.id} className={`hover:bg-gray-50 ${selectedReceiptIds.has(receipt.id) ? 'bg-blue-50' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
@@ -757,7 +797,69 @@ export default function ReceiptsListPage() {
                 ))}
               </tbody>
             </table>
+
+            {/* Pagination Controls */}
+            {pageSize !== -1 && totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div className="text-sm text-gray-600">
+                  Page <span className="font-semibold">{currentPage}</span> of <span className="font-semibold">{totalPages}</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {/* Previous Button */}
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+
+                      // Show pages around current page
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-1 text-sm border rounded-md ${
+                            currentPage === pageNum
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'border-gray-300 hover:bg-gray-100'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Next Button */}
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+          </>
         )}
       </div>
 

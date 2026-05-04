@@ -74,4 +74,10 @@ export const receiptService = {
     const response = await api.get(`/zones/${templateId}`);
     return response.data;
   },
+
+  // Get all available templates
+  getTemplates: async () => {
+    const response = await api.get('/templates/');
+    return response.data;
+  },
 };

@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Upload, Save, Trash2, TestTube, ArrowLeft, Grid3x3 } from 'lucide-react';
 import '../../styles/developer.css';
 
@@ -40,6 +40,7 @@ const PARSER_TYPES = [
 
 export default function TemplateBuilder() {
   const navigate = useNavigate();
+  const { templateId } = useParams<{ templateId?: string }>();
   const canvasRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -65,6 +66,57 @@ export default function TemplateBuilder() {
   const [mode, setMode] = useState<'zones' | 'logo'>('zones');
   const [logoCrop, setLogoCrop] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+
+  // Load template data if editing
+  useEffect(() => {
+    if (templateId) {
+      fetchTemplate(templateId);
+    }
+  }, [templateId]);
+
+  const fetchTemplate = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/templates/${id}`);
+      if (!response.ok) {
+        throw new Error('Template not found');
+      }
+
+      const data = await response.json();
+
+      // Transform backend format to frontend format
+      const transformedZones: Zone[] = Object.entries(data.zones || {}).map(([fieldName, zoneData]: [string, any]) => ({
+        id: zoneData.id || `zone-${fieldName}-${Date.now()}`,
+        fieldName: fieldName,
+        parserType: zoneData.parser || zoneData.parser_type || 'text',
+        xPercent: zoneData.x_percent,
+        yPercent: zoneData.y_percent,
+        widthPercent: zoneData.width_percent,
+        heightPercent: zoneData.height_percent,
+        required: zoneData.required || false
+      }));
+
+      // Set template state
+      setTemplate({
+        templateId: data.template_id,
+        bankName: data.bank_name,
+        description: data.description || '',
+        imageSize: data.image_size || [0, 0],
+        detectionKeywords: data.detection?.keywords || data.detection_keywords || [],
+        zones: transformedZones
+      });
+
+      // Set zones state
+      setZones(transformedZones);
+
+      // Set image size state
+      if (data.image_size && data.image_size.length === 2) {
+        setImageSize({ width: data.image_size[0], height: data.image_size[1] });
+      }
+    } catch (error) {
+      console.error('Failed to fetch template:', error);
+      alert(`Failed to load template: ${error}`);
+    }
+  };
 
   // Handle image upload
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -245,8 +297,15 @@ export default function TemplateBuilder() {
   // Save template
   const saveTemplate = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/templates/', {
-        method: 'POST',
+      // Check if we're creating or updating
+      const isEditing = templateId !== undefined;
+      const url = isEditing
+        ? `http://localhost:8000/api/templates/${templateId}`
+        : 'http://localhost:8000/api/templates/';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           template_id: template.templateId,
@@ -268,7 +327,7 @@ export default function TemplateBuilder() {
       });
 
       if (response.ok) {
-        alert('Template saved successfully!');
+        alert(isEditing ? 'Template updated successfully!' : 'Template saved successfully!');
         navigate('/developer/templates');
       } else {
         const error = await response.json();

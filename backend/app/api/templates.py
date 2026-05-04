@@ -125,7 +125,7 @@ async def create_template(template: TemplateCreate):
         template_path = templates_dir / f"{template.template_id}.yaml"
 
         if template_path.exists():
-            raise HTTPException(status_code=400, detail="Template already exists")
+            raise HTTPException(status_code=400, detail="Template already exists. Use PUT to update.")
 
         # Convert to YAML format
         yaml_data = {
@@ -143,6 +143,7 @@ async def create_template(template: TemplateCreate):
 
         for zone in template.zones:
             yaml_data['zones'][zone.field_name] = {
+                'id': zone.id,
                 'x_percent': zone.x_percent,
                 'y_percent': zone.y_percent,
                 'width_percent': zone.width_percent,
@@ -161,6 +162,75 @@ async def create_template(template: TemplateCreate):
     except Exception as e:
         logger.error(f"Error saving template: {str(e)}", exc_info=True)
         raise HTTPException(status_code=422, detail=f"Failed to save template: {str(e)}")
+
+
+@router.put("/templates/{template_id}")
+async def update_template(template_id: str, template: TemplateCreate):
+    """
+    Update an existing template.
+
+    Args:
+        template_id: Template identifier
+        template: Updated template data from frontend
+
+    Returns:
+        Success message with template_id
+
+    Raises:
+        HTTPException: If template not found or validation fails
+    """
+    try:
+        logger.info(f"Updating template {template_id} with data: {template.model_dump()}")
+
+        templates_dir = Path(TEMPLATES_DIR)
+        templates_dir.mkdir(parents=True, exist_ok=True)
+
+        template_path = templates_dir / f"{template_id}.yaml"
+
+        if not template_path.exists():
+            raise HTTPException(status_code=404, detail="Template not found")
+
+        # Ensure template_id matches
+        if template_id != template.template_id:
+            raise HTTPException(status_code=400, detail="Template ID mismatch")
+
+        # Convert to YAML format
+        yaml_data = {
+            'template_id': template.template_id,
+            'bank_name': template.bank_name,
+            'description': template.description,
+            'image_size': template.image_size,
+            'version': '1.0',
+            'detection': {
+                'primary_method': 'keywords',
+                'keywords': template.detection_keywords
+            },
+            'zones': {}
+        }
+
+        for zone in template.zones:
+            yaml_data['zones'][zone.field_name] = {
+                'id': zone.id,
+                'x_percent': zone.x_percent,
+                'y_percent': zone.y_percent,
+                'width_percent': zone.width_percent,
+                'height_percent': zone.height_percent,
+                'parser': zone.parser_type,
+                'required': zone.required,
+                'preprocessor': 'grayscale'
+            }
+
+        # Save YAML file (overwrites existing)
+        with open(template_path, 'w', encoding='utf-8') as f:
+            yaml.dump(yaml_data, f, allow_unicode=True, default_flow_style=False)
+
+        return {"message": "Template updated successfully", "template_id": template.template_id}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating template: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=422, detail=f"Failed to update template: {str(e)}")
 
 
 @router.get("/templates/{template_id}")

@@ -1,4 +1,4 @@
-bank_name: SCB
+bank_name: SCB_B
 description: ''
 detection:
   keywords: []
@@ -11,6 +11,7 @@ version: '1.0'
 zones:
   amount:
     height_percent: 7.299469529110556
+    id: zone-amount-1777893425219
     parser: thai_amount
     preprocessor: grayscale
     required: false
@@ -19,6 +20,7 @@ zones:
     y_percent: 50.44997950588389
   date:
     height_percent: 3.8778431873399826
+    id: zone-date-1777893425219
     parser: thai_date
     preprocessor: grayscale
     required: false
@@ -27,6 +29,7 @@ zones:
     y_percent: 20.719848402944024
   receiver_name:
     height_percent: 4.866313019407037
+    id: zone-receiver_name-1777893425219
     parser: text
     preprocessor: grayscale
     required: false
@@ -35,6 +38,7 @@ zones:
     y_percent: 39.804919775931
   sender_name:
     height_percent: 5.246493724048212
+    id: zone-sender_name-1777893425219
     parser: text
     preprocessor: grayscale
     required: false
@@ -43,6 +47,7 @@ zones:
     y_percent: 30.642564794078687
   time:
     height_percent: 3.8778431873399826
+    id: zone-time-1777893425219
     parser: time
     preprocessor: grayscale
     required: false

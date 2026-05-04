@@ -21,28 +21,51 @@ export default function ReviewPage() {
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const imageRef = useRef<HTMLImageElement>(null);
 
-  // Available templates
-  const templates = [
-    { id: 'Krungthai', name: 'Krungthai Bank' },
-    { id: 'Kasikorn', name: 'Kasikorn Bank (K+)' },
-    { id: 'SCB', name: 'SCB' },
-    { id: 'TTB', name: 'TTB' }
-  ];
+  // Available templates - fetched from API
+  const [templates, setTemplates] = useState<Array<{ id: string; name: string }>>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
 
   useEffect(() => {
     // Always fetch fresh data from API to ensure we have latest transaction_type
     fetchPendingReceipts();
+    fetchTemplates();
   }, []);
+
+  const fetchTemplates = async () => {
+    try {
+      setTemplatesLoading(true);
+      const data = await receiptService.getTemplates();
+      // Transform templates data to match expected format
+      const transformedTemplates = data.map((tmpl: any) => ({
+        id: tmpl.template_id,
+        name: tmpl.bank_name || tmpl.template_id
+      }));
+      setTemplates(transformedTemplates);
+    } catch (error) {
+      console.error('Failed to fetch templates:', error);
+      // Set fallback templates if API fails
+      setTemplates([
+        { id: 'Krungthai', name: 'Krungthai Bank' },
+        { id: 'Kasikorn', name: 'Kasikorn Bank (K+)' },
+        { id: 'SCB', name: 'SCB' },
+        { id: 'TTB', name: 'TTB' }
+      ]);
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
 
   const fetchPendingReceipts = async () => {
     try {
-      const data = await receiptService.getReceipts({ status: 'pending', limit: 50 });
+      // Fetch ALL pending receipts (backend max limit is 1000)
+      const data = await receiptService.getReceipts({ status: 'pending', limit: 1000 });
       if (data.length > 0) {
         setReceipts(data);
         setCurrentReceipt(data[0]);
+        setCurrentIndex(0);
       } else {
-        // Redirect to upload if no pending receipts
-        navigate('/upload');
+        // Redirect to receipts list if no pending receipts
+        navigate('/receipts');
       }
     } catch (error) {
       console.error('Failed to fetch receipts:', error);
@@ -127,12 +150,32 @@ export default function ReviewPage() {
 
     try {
       await receiptService.confirmReceipt(currentReceipt.id);
-      // Move to next receipt after confirming
-      if (currentIndex < receipts.length - 1) {
-        handleNext();
+
+      // Remove confirmed receipt from list
+      const updatedReceipts = receipts.filter(r => r.id !== currentReceipt.id);
+
+      if (updatedReceipts.length > 0) {
+        // Stay on review page with remaining receipts
+        setReceipts(updatedReceipts);
+        setCurrentReceipt(updatedReceipts[0]);
+        setCurrentIndex(0);
       } else {
-        // All receipts reviewed, navigate to receipts list
-        navigate('/receipts');
+        // Try to fetch more pending receipts
+        try {
+          const moreReceipts = await receiptService.getReceipts({ status: 'pending', limit: 1000 });
+          if (moreReceipts.length > 0) {
+            // More pending receipts found, load them
+            setReceipts(moreReceipts);
+            setCurrentReceipt(moreReceipts[0]);
+            setCurrentIndex(0);
+          } else {
+            // All receipts reviewed, navigate to receipts list
+            navigate('/receipts');
+          }
+        } catch (error) {
+          console.error('Failed to fetch more receipts:', error);
+          navigate('/receipts');
+        }
       }
     } catch (error) {
       console.error('Failed to confirm receipt:', error);
@@ -184,7 +227,7 @@ export default function ReviewPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Review Receipts</h1>
         <div className="text-sm text-gray-600">
-          Receipt {currentIndex + 1} of {receipts.length}
+          Receipt {currentIndex + 1} of {receipts.length} pending
         </div>
       </div>
 
@@ -318,18 +361,29 @@ export default function ReviewPage() {
                 <label className="block text-xs font-medium text-gray-600 mb-1">
                   Template
                 </label>
-                <select
-                  value={selectedTemplate}
-                  onChange={(e) => setSelectedTemplate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                >
-                  <option value="">Select a template...</option>
-                  {templates.map(template => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
+                {templatesLoading ? (
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm text-gray-500">
+                    Loading templates...
+                  </div>
+                ) : (
+                  <select
+                    value={selectedTemplate}
+                    onChange={(e) => setSelectedTemplate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  >
+                    <option value="">Select a template...</option>
+                    {templates.map(template => (
+                      <option key={template.id} value={template.id}>
+                        {template.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {templates.length === 0 && !templatesLoading && (
+                  <p className="mt-1 text-xs text-amber-600">
+                    No templates available. Create templates in Developer Mode.
+                  </p>
+                )}
               </div>
 
               {/* OCR Method Selection */}

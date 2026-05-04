@@ -12,7 +12,6 @@ import AnalyticsPage from './pages/Analytics';
 import TemplateBuilder from './pages/developer/TemplateBuilder';
 import TemplateManagement from './pages/developer/TemplateManagement';
 import { receiptService } from './services/receiptService';
-import { analyticsService } from './services/analyticsService';
 import './styles/developer.css';
 
 function App() {
@@ -186,7 +185,6 @@ function Dashboard() {
 
   useEffect(() => {
     fetchStats();
-    checkAndGenerateSalary();
   }, []);
 
   const fetchStats = async () => {
@@ -197,19 +195,6 @@ function Dashboard() {
       console.error('Failed to fetch stats:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const checkAndGenerateSalary = async () => {
-    try {
-      const result = await analyticsService.checkAndGenerateSalary();
-      if (result.status === 'created') {
-        console.log('✅ Salary entry created for current month');
-      } else if (result.status === 'already_exists') {
-        console.log('ℹ️ Salary already exists for current month');
-      }
-    } catch (error) {
-      console.error('Failed to check/generate salary:', error);
     }
   };
 
