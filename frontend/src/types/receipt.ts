@@ -14,6 +14,11 @@ export interface Receipt {
   transaction_type?: 'sending' | 'receiving' | 'unknown';
   transaction_confidence?: 'high' | 'medium' | 'low';
   classification_reason?: string;
+  detected_template?: string;
+  ocr_engine?: string;
+  is_salary?: boolean;
+  is_manual_income?: boolean;
+  income_category?: string;
   created_at: string;
   updated_at: string;
 }

@@ -192,7 +192,9 @@ async def upload_images(
                 amount=ocr_result["amount"],
                 note=ocr_result["note"],
                 confidence_score=ocr_result["confidence_score"],
-                status="pending"
+                status="pending",
+                detected_template=ocr_result.get("detected_template"),
+                ocr_engine=ocr_result.get("ocr_engine", "template")
             )
 
             db.add(receipt)
@@ -282,6 +284,14 @@ async def upload_images(
                 "note": receipt.note,
                 "confidence_score": float(receipt.confidence_score) if receipt.confidence_score else 0,
                 "status": receipt.status,
+                "transaction_type": receipt.transaction_type,
+                "transaction_confidence": receipt.transaction_confidence,
+                "classification_reason": receipt.classification_reason,
+                "detected_template": receipt.detected_template,
+                "ocr_engine": receipt.ocr_engine,
+                "is_salary": receipt.is_salary,
+                "is_manual_income": receipt.is_manual_income,
+                "income_category": receipt.income_category,
                 "created_at": receipt.created_at.isoformat(),
                 "updated_at": receipt.updated_at.isoformat()
             }

@@ -52,6 +52,14 @@ export const receiptService = {
     return response.data;
   },
 
+  // Reprocess receipt OCR with specific template
+  reprocessReceipt: async (id: number, templateId: string) => {
+    const response = await api.post(`/receipts/${id}/reprocess-ocr`, null, {
+      params: { template_id: templateId }
+    });
+    return response.data;
+  },
+
   // Get statistics
   getStats: async () => {
     const response = await api.get('/receipts/stats/overview');

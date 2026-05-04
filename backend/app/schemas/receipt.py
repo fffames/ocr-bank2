@@ -20,6 +20,8 @@ class ReceiptBase(BaseModel):
     is_salary: bool = False
     is_manual_income: bool = False
     income_category: Optional[str] = None
+    detected_template: Optional[str] = None
+    ocr_engine: Optional[str] = None
 
 
 class ReceiptCreate(ReceiptBase):

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import date
+from datetime import date, datetime
 
 from app.database.connection import get_db
 from app.models.receipt import Receipt
@@ -245,3 +245,70 @@ def get_receipt_stats(db: Session = Depends(get_db)):
         "sending_count": sending_count,
         "receiving_count": receiving_count
     }
+
+
+@router.post("/{receipt_id}/reprocess-ocr")
+async def reprocess_receipt_ocr(
+    receipt_id: int,
+    template_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Re-process a receipt with a specific template.
+
+    Args:
+        receipt_id: ID of the receipt to reprocess
+        template_id: Template ID to use for OCR
+        db: Database session
+
+    Returns:
+        Updated receipt with new OCR data
+    """
+    from app.services.template_ocr_service import get_template_ocr_service
+
+    # Get the receipt
+    receipt = db.query(Receipt).filter(Receipt.id == receipt_id).first()
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+
+    # Use image_path as-is (it's already relative to project root: ./backend/images/...)
+    image_path = receipt.image_path
+
+    # Re-process OCR with specified template
+    try:
+        template_service = get_template_ocr_service()
+        ocr_result = template_service.extract_from_image(image_path, template_id=template_id)
+
+        # Update receipt with new OCR data
+        if ocr_result.get("extracted_date"):
+            receipt.extracted_date = ocr_result["extracted_date"]
+        if ocr_result.get("extracted_time"):
+            receipt.extracted_time = ocr_result["extracted_time"]
+        if ocr_result.get("sender"):
+            receipt.sender = ocr_result["sender"]
+        if ocr_result.get("receiver"):
+            receipt.receiver = ocr_result["receiver"]
+        if ocr_result.get("amount"):
+            from decimal import Decimal
+            receipt.amount = Decimal(str(ocr_result["amount"]))
+        if ocr_result.get("note"):
+            receipt.note = ocr_result["note"]
+        if ocr_result.get("confidence_score"):
+            from decimal import Decimal
+            receipt.confidence_score = Decimal(str(ocr_result["confidence_score"]))
+
+        # Update template info
+        receipt.detected_template = template_id
+        receipt.ocr_engine = "template"
+        receipt.updated_at = datetime.now()
+
+        db.commit()
+        db.refresh(receipt)
+
+        return receipt
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to re-process OCR: {str(e)}"
+        )

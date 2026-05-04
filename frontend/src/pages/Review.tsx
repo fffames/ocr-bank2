@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Save, CheckCircle, Edit2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, CheckCircle, Edit2, RefreshCw } from 'lucide-react';
 import { Receipt, ReceiptUpdate } from '../types/receipt';
 import { receiptService } from '../services/receiptService';
 
@@ -13,6 +13,16 @@ export default function ReviewPage() {
   const [editedData, setEditedData] = useState<ReceiptUpdate>({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(currentReceipt?.detected_template || '');
+  const [isReprocessing, setIsReprocessing] = useState(false);
+
+  // Available templates
+  const templates = [
+    { id: 'Krungthai', name: 'Krungthai Bank' },
+    { id: 'Kasikorn', name: 'Kasikorn Bank (K+)' },
+    { id: 'SCB', name: 'SCB' },
+    { id: 'TTB', name: 'TTB' }
+  ];
 
   useEffect(() => {
     // Always fetch fresh data from API to ensure we have latest transaction_type
@@ -33,6 +43,13 @@ export default function ReviewPage() {
       console.error('Failed to fetch receipts:', error);
     }
   };
+
+  // Update selected template when receipt changes
+  useEffect(() => {
+    if (currentReceipt) {
+      setSelectedTemplate(currentReceipt.detected_template || '');
+    }
+  }, [currentReceipt]);
 
   const handleNext = () => {
     if (currentIndex < receipts.length - 1) {
@@ -108,6 +125,27 @@ export default function ReviewPage() {
     }
   };
 
+  const handleReprocess = async () => {
+    if (!currentReceipt || !selectedTemplate) return;
+
+    setIsReprocessing(true);
+    try {
+      const updated = await receiptService.reprocessReceipt(currentReceipt.id, selectedTemplate);
+      setCurrentReceipt(updated);
+      setReceipts(prev =>
+        prev.map(r => r.id === updated.id ? updated : r)
+      );
+      setIsEditing(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (error) {
+      console.error('Failed to reprocess receipt:', error);
+      alert('Failed to reprocess receipt. Please try again.');
+    } finally {
+      setIsReprocessing(false);
+    }
+  };
+
   if (!currentReceipt) {
     return (
       <div className="text-center py-12">
@@ -154,13 +192,64 @@ export default function ReviewPage() {
               }}
             />
           </div>
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-sm text-gray-600">{currentReceipt.filename}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Confidence:</span>
-              <span className={`text-sm font-semibold text-${confidenceColor}-600`}>
-                {confidencePercent}%
-              </span>
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">{currentReceipt.filename}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Confidence:</span>
+                <span className={`text-sm font-semibold text-${confidenceColor}-600`}>
+                  {confidencePercent}%
+                </span>
+              </div>
+            </div>
+
+            {/* Template Detection Display */}
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-blue-900">OCR Template</span>
+                <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                  {currentReceipt.ocr_engine || 'template'}
+                </span>
+              </div>
+
+              {currentReceipt.detected_template ? (
+                <div className="text-sm text-blue-800">
+                  Detected: <span className="font-semibold">
+                    {templates.find(t => t.id === currentReceipt.detected_template)?.name || currentReceipt.detected_template}
+                  </span>
+                </div>
+              ) : (
+                <div className="text-sm text-blue-700">No template detected</div>
+              )}
+            </div>
+
+            {/* Template Selection and Reprocess */}
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Change Template & Reprocess
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={selectedTemplate}
+                  onChange={(e) => setSelectedTemplate(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  <option value="">Select a template...</option>
+                  {templates.map(template => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleReprocess}
+                  disabled={!selectedTemplate || isReprocessing}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  <RefreshCw size={16} className={isReprocessing ? 'animate-spin' : ''} />
+                  {isReprocessing ? 'Processing...' : 'Reprocess'}
+                </button>
+              </div>
             </div>
           </div>
 

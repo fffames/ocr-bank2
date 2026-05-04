@@ -107,7 +107,7 @@ class TemplateOCRService:
         parsed = self._parse_fields(extracted, zones)
 
         # 5. Return in same format as current system
-        result = self._format_result(parsed, extracted)
+        result = self._format_result(parsed, extracted, template_id)
         print(f"\n=== Extraction Complete ===")
         print(f"  Date: {result.get('extracted_date')}")
         print(f"  Time: {result.get('extracted_time')}")
@@ -157,13 +157,14 @@ class TemplateOCRService:
 
         return parsed
 
-    def _format_result(self, parsed: Dict[str, Any], raw: Dict[str, str]) -> Dict[str, Any]:
+    def _format_result(self, parsed: Dict[str, Any], raw: Dict[str, str], template_id: str) -> Dict[str, Any]:
         """
         Format result to match current system output format.
 
         Args:
             parsed: Parsed field values
             raw: Raw extracted text
+            template_id: The template ID that was used
 
         Returns:
             Formatted result dictionary matching VLM/OCR service output
@@ -179,7 +180,9 @@ class TemplateOCRService:
             "receiver": parsed.get('receiver_name'),
             "amount": parsed.get('amount'),
             "note": parsed.get('note'),
-            "confidence_score": Decimal("0.95")  # High confidence for template-based OCR
+            "confidence_score": Decimal("0.95"),  # High confidence for template-based OCR
+            "detected_template": template_id,
+            "ocr_engine": "template"
         }
 
     def _try_all_templates(self, image_path: str) -> Optional[str]:
@@ -252,7 +255,7 @@ class TemplateOCRService:
             parsed = self._parse_fields(extracted, zones)
 
             # Return in same format as current system
-            return self._format_result(parsed, extracted)
+            return self._format_result(parsed, extracted, template_id)
 
         except Exception as e:
             print(f"    Error during extraction: {e}")
