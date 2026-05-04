@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, X, AlertCircle } from 'lucide-react';
+import { Upload, X, AlertCircle, Loader2, FileText, CheckCircle } from 'lucide-react';
 import { receiptService } from '../services/receiptService';
 
 interface FileWithPreview {
@@ -192,6 +192,94 @@ export default function UploadPage() {
             >
               {isUploading ? 'Processing...' : 'Upload & Process'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {isUploading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full mx-4">
+            {/* Animated Spinner */}
+            <div className="flex flex-col items-center">
+              <div className="relative mb-6">
+                <Loader2 className="h-16 w-16 text-blue-600 animate-spin" />
+                <div className="absolute inset-0 h-16 w-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+              </div>
+
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Processing Receipts</h2>
+              <p className="text-gray-600 text-center mb-6">
+                Analyzing {files.length} file{files.length > 1 ? 's' : ''} with OCR...
+              </p>
+
+              {/* File List */}
+              <div className="w-full space-y-2 mb-6">
+                <div className="flex items-center justify-between text-sm text-gray-700 mb-2">
+                  <span>Files to process:</span>
+                  <span className="font-semibold">{files.length}</span>
+                </div>
+
+                {/* Animated Progress Bars */}
+                {files.slice(0, 3).map((file, index) => (
+                  <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded-md">
+                    <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-700 truncate">
+                        {file.file.name}
+                      </p>
+                      <div className="mt-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-600 rounded-full animate-pulse"
+                          style={{
+                            width: '100%',
+                            animationDelay: `${index * 0.2}s`,
+                            animationDuration: '1.5s'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {files.length > 3 && (
+                  <p className="text-xs text-gray-500 text-center pt-2">
+                    +{files.length - 3} more file{files.length - 3 > 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+
+              {/* Processing Steps */}
+              <div className="w-full space-y-3 text-left">
+                <div className="flex items-center gap-3 text-sm text-gray-700">
+                  <div className="h-5 w-5 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Loader2 className="h-3 w-3 text-blue-600 animate-spin" />
+                  </div>
+                  <span>Uploading images...</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-gray-700">
+                  <div className="h-5 w-5 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Loader2 className="h-3 w-3 text-blue-600 animate-spin" style={{ animationDelay: '0.5s' }} />
+                  </div>
+                  <span>Detecting receipt template...</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-gray-700">
+                  <div className="h-5 w-5 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Loader2 className="h-3 w-3 text-blue-600 animate-spin" style={{ animationDelay: '1s' }} />
+                  </div>
+                  <span>Extracting text with OCR...</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-gray-700">
+                  <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle className="h-3 w-3 text-green-600" />
+                  </div>
+                  <span>Classifying transaction...</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-500 text-center mt-6">
+                This may take 10-30 seconds depending on the number of files
+              </p>
+            </div>
           </div>
         </div>
       )}

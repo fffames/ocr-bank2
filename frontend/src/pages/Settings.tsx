@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Settings, Save, User, Info, DollarSign } from 'lucide-react';
+import { Settings, Save, User, Info, DollarSign, Trash2, Plus, RefreshCw } from 'lucide-react';
 import { userService } from '../services/userService';
 import { analyticsService, SalaryConfig } from '../services/analyticsService';
+import { ocrCorrectionService, OCRCorrections } from '../services/ocrCorrectionService';
 
 interface UserSettings {
   user_name: string;
@@ -20,6 +21,12 @@ export default function SettingsPage() {
     salary_day_of_month: 1,
     salary_category: 'Salary'
   });
+  const [ocrCorrections, setOcrCorrections] = useState<OCRCorrections>({
+    corrections: {},
+    count: 0
+  });
+  const [newWrongText, setNewWrongText] = useState('');
+  const [newCorrectText, setNewCorrectText] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [variationsInput, setVariationsInput] = useState('');
@@ -31,6 +38,7 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchSettings();
     fetchSalaryConfig();
+    fetchOCRCorrections();
   }, []);
 
   useEffect(() => {
@@ -55,6 +63,57 @@ export default function SettingsPage() {
       setSalaryConfig(data);
     } catch (error) {
       console.error('Failed to fetch salary config:', error);
+    }
+  };
+
+  const fetchOCRCorrections = async () => {
+    try {
+      const data = await ocrCorrectionService.getCorrections();
+      setOcrCorrections(data);
+    } catch (error) {
+      console.error('Failed to fetch OCR corrections:', error);
+    }
+  };
+
+  const handleAddCorrection = async () => {
+    if (!newWrongText.trim() || !newCorrectText.trim()) {
+      alert('Please enter both wrong and correct text');
+      return;
+    }
+
+    try {
+      await ocrCorrectionService.addCorrection(newWrongText, newCorrectText);
+      await fetchOCRCorrections();
+      setNewWrongText('');
+      setNewCorrectText('');
+    } catch (error) {
+      console.error('Failed to add correction:', error);
+      alert('❌ Failed to add correction');
+    }
+  };
+
+  const handleDeleteCorrection = async (wrongText: string) => {
+    if (!confirm(`Delete correction: "${wrongText}"?`)) {
+      return;
+    }
+
+    try {
+      await ocrCorrectionService.deleteCorrection(wrongText);
+      await fetchOCRCorrections();
+    } catch (error) {
+      console.error('Failed to delete correction:', error);
+      alert('❌ Failed to delete correction');
+    }
+  };
+
+  const handleReloadCorrections = async () => {
+    try {
+      await ocrCorrectionService.reloadCorrections();
+      await fetchOCRCorrections();
+      alert('✅ Corrections reloaded from file');
+    } catch (error) {
+      console.error('Failed to reload corrections:', error);
+      alert('❌ Failed to reload corrections');
     }
   };
 
@@ -289,6 +348,109 @@ export default function SettingsPage() {
               {salarySaving ? 'Saving...' : 'Save Salary Config'}
             </button>
           </div>
+        </div>
+
+        {/* OCR Corrections Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Settings className="text-purple-600" size={24} />
+              <h2 className="text-xl font-semibold text-gray-900">
+                OCR Corrections
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">
+                {ocrCorrections.count} corrections
+              </span>
+              <button
+                onClick={handleReloadCorrections}
+                className="p-1.5 text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                title="Reload corrections from file"
+              >
+                <RefreshCw size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* Add new correction */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-md">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Add New Correction</h3>
+            <div className="flex gap-3 items-end">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Wrong Text (from OCR)
+                </label>
+                <input
+                  type="text"
+                  value={newWrongText}
+                  onChange={(e) => setNewWrongText(e.target.value)}
+                  placeholder="เน.ย."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 text-sm"
+                />
+              </div>
+              <div className="flex items-center text-gray-400 pb-2">
+                →
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Correct Text
+                </label>
+                <input
+                  type="text"
+                  value={newCorrectText}
+                  onChange={(e) => setNewCorrectText(e.target.value)}
+                  placeholder="ม.ค."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 text-sm"
+                />
+              </div>
+              <button
+                onClick={handleAddCorrection}
+                disabled={!newWrongText.trim() || !newCorrectText.trim()}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 transition-colors"
+              >
+                <Plus size={16} />
+                Add
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Map common OCR errors to correct text. Applied automatically before parsing.
+              If you edit the JSON file directly, click the reload button to apply changes.
+            </p>
+          </div>
+
+          {/* Existing corrections list */}
+          {ocrCorrections.count > 0 ? (
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {Object.entries(ocrCorrections.corrections).map(([wrong, correct]) => (
+                <div
+                  key={wrong}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-mono">
+                      {wrong}
+                    </span>
+                    <span className="text-gray-400">→</span>
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-mono">
+                      {correct}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteCorrection(wrong)}
+                    className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                    title="Delete correction"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500 text-sm">
+              No OCR corrections yet. Add one above to fix common OCR errors.
+            </div>
+          )}
         </div>
 
         {/* Info Card */}

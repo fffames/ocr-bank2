@@ -144,10 +144,11 @@ class ThaiDateParser(BaseParser):
         """
         Try parsing Thai date with month name.
 
-        Pattern: DD Month YYYY (e.g., "28 ม.ค. 2567")
+        Pattern: DD Month YYYY (e.g., "28 ม.ค. 2567" or "28ม.ค.67")
         """
-        # Pattern: DD Month YY/YYYY
-        pattern = r'(\d{1,2})\s+([^\d\s]+\.?)\s+(\d{2,4})'
+        # Pattern: DD Month YY/YYYY (with or without spaces)
+        # Handle: "28 ม.ค. 69", "28ม.ค.69", "1เม.ย. 69"
+        pattern = r'(\d{1,2})\s*([^\d\s,]+\.?)\s+(\d{2,4})'
 
         match = re.search(pattern, text)
         if not match:

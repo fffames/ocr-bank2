@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     # VLM (Vision Language Model for OCR)
     vlm_provider: Literal["groq", "lm_studio"] = "groq"
 
+    # OCR Engine
+    ocr_engine: Literal["tesseract", "paddleocr"] = "paddleocr"
+
     # LLM
     gemini_api_key: str = ""
     groq_api_key: str = ""

@@ -20,7 +20,7 @@ zones:
   date:
     height_percent: 5.159667523923927
     parser: thai_date
-    preprocessor: grayscale
+    preprocessor: enhanced
     required: false
     width_percent: 27.118088960759827
     x_percent: 55.15321474627966
@@ -44,7 +44,7 @@ zones:
   time:
     height_percent: 5.572440925837841
     parser: time
-    preprocessor: grayscale
+    preprocessor: enhanced
     required: false
     width_percent: 13.100526067999919
     x_percent: 84.23638261723947

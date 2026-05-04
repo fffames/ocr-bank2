@@ -1,7 +1,7 @@
 """Template CRUD API endpoints."""
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel, field_validator, ValidationError
-from typing import List, Optional
+from typing import List, Optional, Dict
 import yaml
 from pathlib import Path
 import shutil
@@ -349,5 +349,39 @@ async def upload_logo(
         }
 
     except Exception as e:
-        logger.error(f"Error uploading logo: {str(e)}", exc_info=True)
+        logger.error(f"Error uploading logo: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to upload logo: {str(e)}")
+
+
+@router.get("/zones/{template_id}")
+async def get_template_zones(template_id: str):
+    """Get zone definitions for a specific template."""
+    template_file = TEMPLATES_DIR / f"{template_id}.yaml"
+
+    if not template_file.exists():
+        raise HTTPException(status_code=404, detail=f"Template not found: {template_id}")
+
+    with open(template_file, 'r', encoding='utf-8') as f:
+        template_data = yaml.safe_load(f)
+
+    zones = template_data.get('zones', {})
+
+    # Convert zones to list with metadata
+    zone_list = []
+    for field_name, zone_config in zones.items():
+        zone_list.append({
+            'field_name': field_name,
+            'x_percent': zone_config.get('x_percent', 0),
+            'y_percent': zone_config.get('y_percent', 0),
+            'width_percent': zone_config.get('width_percent', 0),
+            'height_percent': zone_config.get('height_percent', 0),
+            'parser': zone_config.get('parser', 'text'),
+            'required': zone_config.get('required', False)
+        })
+
+    return {
+        'template_id': template_id,
+        'template_name': template_data.get('bank_name', template_id),
+        'image_size': template_data.get('image_size', [0, 0]),
+        'zones': zone_list
+    }

@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Save, CheckCircle, Edit2, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, CheckCircle, Edit2, RefreshCw, Grid3x3 } from 'lucide-react';
 import { Receipt, ReceiptUpdate } from '../types/receipt';
 import { receiptService } from '../services/receiptService';
+import ZoneOverlay from '../components/ZoneOverlay';
 
 export default function ReviewPage() {
   const navigate = useNavigate();
@@ -15,6 +16,9 @@ export default function ReviewPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(currentReceipt?.detected_template || '');
   const [isReprocessing, setIsReprocessing] = useState(false);
+  const [showZones, setShowZones] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const imageRef = useRef<HTMLImageElement>(null);
 
   // Available templates
   const templates = [
@@ -50,6 +54,16 @@ export default function ReviewPage() {
       setSelectedTemplate(currentReceipt.detected_template || '');
     }
   }, [currentReceipt]);
+
+  // Handle image load to get dimensions
+  const handleImageLoad = () => {
+    if (imageRef.current) {
+      setImageDimensions({
+        width: imageRef.current.clientWidth,
+        height: imageRef.current.clientHeight
+      });
+    }
+  };
 
   const handleNext = () => {
     if (currentIndex < receipts.length - 1) {
@@ -180,17 +194,45 @@ export default function ReviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Image Viewer */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold mb-4">Original Image</h2>
-          <div className="bg-gray-100 rounded-lg overflow-hidden">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Original Image</h2>
+            <button
+              onClick={() => setShowZones(!showZones)}
+              disabled={!currentReceipt.detected_template}
+              className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                showZones
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50'
+              }`}
+              title={showZones ? 'Hide OCR zones' : 'Show OCR zones'}
+            >
+              <Grid3x3 size={16} />
+              {showZones ? 'Hide Zones' : 'Show Zones'}
+            </button>
+          </div>
+
+          {/* Image container with zone overlay */}
+          <div className="relative bg-gray-100 rounded-lg overflow-hidden">
             <img
+              ref={imageRef}
               src={`http://localhost:8000${currentReceipt.image_path.replace('./backend/images', '/images')}`}
               alt={currentReceipt.filename}
               className="w-full h-auto"
+              onLoad={handleImageLoad}
               onError={(e) => {
                 console.error('Failed to load image:', currentReceipt.image_path);
                 (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3EImage not found%3C/text%3E%3C/svg%3E';
               }}
             />
+
+            {/* Zone overlay */}
+            {showZones && currentReceipt.detected_template && imageDimensions.width > 0 && (
+              <ZoneOverlay
+                templateId={currentReceipt.detected_template}
+                imageWidth={imageDimensions.width}
+                imageHeight={imageDimensions.height}
+              />
+            )}
           </div>
           <div className="mt-4 space-y-3">
             <div className="flex items-center justify-between">

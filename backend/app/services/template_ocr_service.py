@@ -6,21 +6,34 @@ from PIL import Image
 
 from .template_manager import TemplateManager
 from .zone_extractor import ZoneExtractor
+from .ocr_correction_service import get_correction_service
 from .parsers.thai_date_parser import ThaiDateParser
 from .parsers.thai_amount_parser import ThaiAmountParser
 from .parsers.thai_name_parser import ThaiNameParser
 from .parsers.thai_time_parser import ThaiTimeParser
+from ..config import settings
 
 
 class TemplateOCRService:
     """Template-based OCR service for Thai bank receipts."""
 
-    def __init__(self):
-        """Initialize template OCR service."""
+    def __init__(self, ocr_engine: Optional[str] = None):
+        """
+        Initialize template OCR service.
+
+        Args:
+            ocr_engine: OCR engine to use ('tesseract', 'paddleocr', or None for auto-detect from settings)
+        """
         self.template_manager = TemplateManager()
-        self.zone_extractor = ZoneExtractor()
+
+        # Determine OCR engine to use
+        if ocr_engine is None:
+            # Use settings from config.py (which reads from .env or defaults)
+            ocr_engine = settings.ocr_engine
+
+        self.zone_extractor = ZoneExtractor(ocr_engine=ocr_engine)
         self.parsers = self._init_parsers()
-        print("✅ TemplateOCRService initialized")
+        print(f"✅ TemplateOCRService initialized with {ocr_engine}")
 
     def _init_parsers(self) -> Dict[str, Any]:
         """Initialize field parsers."""
@@ -132,6 +145,9 @@ class TemplateOCRService:
         """
         parsed = {}
 
+        # Get OCR correction service
+        correction_service = get_correction_service()
+
         for field_name, text in extracted.items():
             if text is None:
                 parsed[field_name] = None
@@ -140,20 +156,26 @@ class TemplateOCRService:
             zone_config = zones.get(field_name, {})
             parser_type = zone_config.get('parser', 'text')
 
+            # Apply OCR corrections before parsing
+            corrected_text = correction_service.apply_corrections(text)
+
+            if corrected_text != text:
+                print(f"    Applied corrections to '{field_name}': '{text}' -> '{corrected_text}'")
+
             # Get parser
             parser = self.parsers.get(parser_type)
 
             if parser:
                 try:
-                    parsed_value = parser.parse(text)
+                    parsed_value = parser.parse(corrected_text)
                     parsed[field_name] = parsed_value
                     print(f"    Parsed '{field_name}': {parsed_value}")
                 except Exception as e:
                     print(f"    ⚠️  Error parsing '{field_name}': {e}")
                     parsed[field_name] = None  # Return None on error, not raw text
             else:
-                # No parser, return raw text
-                parsed[field_name] = text
+                # No parser, return corrected text
+                parsed[field_name] = corrected_text
 
         return parsed
 
