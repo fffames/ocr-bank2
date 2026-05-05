@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install only FastAPI and Uvicorn
+RUN pip install fastapi uvicorn
+
+# Copy ONLY the test app file
+COPY backend/app/main_test.py .
+
+# Expose port
+EXPOSE 8000
+
+# Run the test app directly
+CMD ["python", "-m", "uvicorn", "main_test:app", "--host", "0.0.0.0", "--port", "8000"]
