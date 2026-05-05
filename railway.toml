@@ -1,14 +1,13 @@
 [build]
-builder = "DOCKERFILE"
-dockerfilePath = "backend/Dockerfile"
+builder = "NIXPACKS"
 
 [deploy]
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
-rootDirectory = "."
-# Give app more time to start (Railway needs time to pull Docker image)
+rootDirectory = "backend"
 startTimeout = 600
 
 [env]
 PORT = "8000"
+PYTHON_VERSION = "3.11"

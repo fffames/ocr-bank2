@@ -16,25 +16,19 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup_event():
     """Create necessary directories on startup."""
-    # Create image storage directory
-    os.makedirs(settings.image_storage_path, exist_ok=True)
+    try:
+        # Create image storage directory
+        os.makedirs(settings.image_storage_path, exist_ok=True)
 
-    # Create ChromaDB directory
-    os.makedirs(settings.chromadb_persist_directory, exist_ok=True)
+        # Create ChromaDB directory
+        os.makedirs(settings.chromadb_persist_directory, exist_ok=True)
 
-    # Create uploads directory
-    os.makedirs("uploads", exist_ok=True)
+        # Create uploads directory
+        os.makedirs("uploads", exist_ok=True)
 
-    # Create config directory for Google Sheets credentials
-    config_dir = os.path.dirname(settings.google_sheets_credentials_path)
-    if config_dir and not os.path.exists(config_dir):
-        os.makedirs(config_dir, exist_ok=True)
-
-    print(f"✅ Directories created:")
-    print(f"   - Images: {settings.image_storage_path}")
-    print(f"   - ChromaDB: {settings.chromadb_persist_directory}")
-    print(f"   - Uploads: uploads")
-    print(f"   - Config: {config_dir}")
+        print(f"✅ Directories created successfully")
+    except Exception as e:
+        print(f"⚠️  Warning: Error creating directories: {e}")
 
 # Add validation error handler
 @app.exception_handler(RequestValidationError)
@@ -52,12 +46,6 @@ async def validation_exception_handler(request, exc: RequestValidationError):
         content={"detail": error_detail}
     )
 
-from fastapi.staticfiles import StaticFiles
-
-# Mount static files for images (only if directory exists)
-if os.path.exists(settings.image_storage_path):
-    app.mount("/images", StaticFiles(directory=settings.image_storage_path), name="images")
-
 # Configure CORS from environment variable
 # Default to localhost for development
 cors_origins = settings.cors_origins.split(",") if settings.cors_origins else ["http://localhost:5173", "http://localhost:3000"]
@@ -70,7 +58,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # Root endpoint
 @app.get("/")
 async def root():
@@ -80,14 +67,12 @@ async def root():
         "status": "running"
     }
 
-
-# Health check endpoint
+# Health check endpoint - MOST IMPORTANT FOR RAILWAY
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
-
-# Import routers
+# Import routers with better error handling
 try:
     from app.api import upload, receipts, chat, templates, user_settings, export, income, income_categories, salary, ocr_corrections, auth, admin
 
@@ -103,7 +88,7 @@ try:
     app.include_router(income_categories.router, prefix="/api/income-categories", tags=["income_categories"])
     app.include_router(salary.router, prefix="/api/salary", tags=["salary"])
     app.include_router(ocr_corrections.router, prefix="/api", tags=["ocr_corrections"])
-    # app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
     print("✅ All routers imported successfully")
 except Exception as e:
     print(f"⚠️  Warning: Some routers failed to import: {e}")
+    print("⚠️  App will start with limited functionality")
