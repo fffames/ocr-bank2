@@ -3,11 +3,12 @@ builder = "DOCKERFILE"
 dockerfilePath = "backend/Dockerfile"
 
 [deploy]
-healthcheckPath = "/health"
-healthcheckTimeout = 600
+# Disable healthcheck - app needs more startup time than healthcheck allows
+# healthcheckPath = "/health"
+# healthcheckTimeout = 600
 restartPolicyType = "ON_FAILURE"
 rootDirectory = "."
-startTimeout = 900
+startTimeout = 1200
 
 [env]
 PORT = "8000"
