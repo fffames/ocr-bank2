@@ -1,5 +1,4 @@
-import api, { API_URL } from './api';
-import { getToken } from '../utils/auth';
+import api from './api';
 
 export interface ExportFilters {
   date_from?: string;
@@ -29,6 +28,9 @@ class ExportService {
     }
 
     const url = `/export/excel?${params.toString()}`;
+
+    console.log('📤 Calling export API:', url);
+    console.log('📋 Filters object:', filters);
 
     try {
       // Use api client to get the file with auth headers

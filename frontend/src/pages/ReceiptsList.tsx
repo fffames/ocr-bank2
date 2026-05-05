@@ -432,6 +432,9 @@ export default function ReceiptsListPage() {
         }
       }
 
+      console.log('📤 Exporting with filters:', filters);
+      console.log('📊 Current filter state:', { statusFilter, typeFilter, yearFilter, monthFilter });
+
       await exportService.exportToExcel(filters);
       alert('✅ Excel download started!');
     } catch (error: any) {
