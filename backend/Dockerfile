@@ -2,15 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install minimal system dependencies (remove Tesseract for now)
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
-    && rm -rf /var/lib/apt/lists/*
+# No system dependencies needed - pure Python FastAPI app
 
 # Copy requirements first for better caching
 COPY backend/requirements.txt .
