@@ -4,7 +4,7 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from app.database.connection import get_db
 from app.models.receipt import Receipt
@@ -47,7 +47,6 @@ async def export_to_excel(
             query = query.filter(Receipt.extracted_date >= date_from)
         if date_to:
             # Include the full day by adding one day and using < instead of <=
-            from datetime import timedelta
             date_to_end = datetime.strptime(date_to, "%Y-%m-%d") + timedelta(days=1)
             query = query.filter(Receipt.extracted_date < date_to_end)
 
@@ -73,7 +72,6 @@ async def export_to_excel(
         excel_data = service.export_receipts(receipts)
 
         # Generate filename
-        from datetime import datetime
         timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         filename = f"OCR_Bank_Export_{timestamp}.xlsx"
 
