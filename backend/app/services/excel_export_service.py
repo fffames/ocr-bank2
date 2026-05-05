@@ -104,7 +104,7 @@ class ExcelExportService:
         # Auto-adjust column widths
         for column in ws.columns:
             max_length = 0
-            column_letter = column[0].letter  # Get column letter (A, B, C, etc.)
+            column_letter = column[0].column_letter  # Get column letter (A, B, C, etc.)
             for cell in column:
                 try:
                     if len(str(cell.value)) > max_length:
