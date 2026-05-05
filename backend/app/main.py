@@ -85,8 +85,10 @@ async def health_check():
 
 
 # Import routers
-from app.api import upload, receipts, chat, templates, user_settings, export, income, income_categories, salary, ocr_corrections
+from app.api import upload, receipts, chat, templates, user_settings, export, income, income_categories, salary, ocr_corrections, auth, admin
 
+app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
 app.include_router(receipts.router, prefix="/api/receipts", tags=["receipts"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])

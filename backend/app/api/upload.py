@@ -10,11 +10,13 @@ import aiofiles
 
 from app.database.connection import get_db
 from app.models.receipt import Receipt
+from app.models.user import User
 from app.models.user_settings import UserSettings
 from app.services.gemini_vlm_service import get_gemini_vlm_service
 from app.services.vlm_service import get_vlm_service
 from app.services.lm_studio_vlm_service import get_lm_studio_vlm_service
 from app.services.template_ocr_service import get_template_ocr_service
+from app.services.auth_service import get_current_active_user
 from app.config import settings
 
 router = APIRouter()
@@ -24,6 +26,7 @@ router = APIRouter()
 async def upload_images(
     files: Optional[List[UploadFile]] = File(None),
     template_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -32,10 +35,11 @@ async def upload_images(
     Args:
         files: List of image files to upload
         template_id: Optional template ID to force specific template
+        current_user: Authenticated user
         db: Database session
 
     Returns:
-        List of processed receipts with OCR results
+        List of processed receipts with OCR results for the current user
     """
     if not files or len(files) == 0:
         raise HTTPException(status_code=400, detail="No files provided")
@@ -214,8 +218,8 @@ async def upload_images(
                 from app.services.text_cleaning_service import get_text_cleaning_service
                 from app.models.user_settings import UserSettings
 
-                # Get user settings for text cleaning
-                user_settings = db.query(UserSettings).first()
+                # Get user settings for text cleaning (for current user)
+                user_settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
 
                 if user_settings and user_settings.user_name:
                     # Parse name variations
@@ -259,8 +263,9 @@ async def upload_images(
                 print(f"  ⚠️  Text cleaning failed, using original OCR data: {cleaning_error}")
                 # Continue with original OCR data if cleaning fails
 
-            # Create database record
+            # Create database record (associated with current user)
             receipt = Receipt(
+                user_id=current_user.id,
                 filename=file.filename,
                 image_path=final_path,
                 ocr_raw_text=ocr_result["raw_text"],
@@ -285,8 +290,8 @@ async def upload_images(
                 from app.services.transaction_classifier import TransactionClassifier
                 from app.models.user_settings import UserSettings
 
-                # Get user settings
-                user_settings = db.query(UserSettings).first()
+                # Get user settings (for current user)
+                user_settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
 
                 if (user_settings and user_settings.auto_classify and user_settings.user_name):
                     # Run classifier (reads sender/receiver from database)
@@ -480,7 +485,7 @@ async def process_ocr_for_receipt(
             from app.services.text_cleaning_service import get_text_cleaning_service
 
             # Get user settings for text cleaning
-            user_settings = db.query(UserSettings).first()
+            user_settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
 
             if user_settings and user_settings.user_name:
                 # Parse name variations

@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: str = "http://localhost:5173,http://localhost:3000"  # Comma-separated list
 
+    # Authentication (JWT)
+    secret_key: str = "your-secret-key-change-in-production-min-32-chars"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 10080  # 7 days
+
     class Config:
         env_file = ".env"
         case_sensitive = False

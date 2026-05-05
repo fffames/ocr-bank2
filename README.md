@@ -2,6 +2,23 @@
 
 A full-stack web application for mobile bank receipt processing with OCR, review interface, database storage, Google Sheets export, and RAG-powered chatbot.
 
+## 🚀 Quick Deploy
+
+**Deploy to production for FREE in 30 minutes!**
+
+See [QUICK_DEPLOY.md](QUICK_DEPLOY.md) for step-by-step deployment instructions.
+
+**TL;DR:**
+1. Create accounts: Railway, Vercel, Supabase
+2. Deploy database to Supabase
+3. Deploy backend to Railway
+4. Deploy frontend to Vercel
+5. Test your deployed app
+
+**Cost:** $0/month (using free tiers)
+
+---
+
 ## Features
 
 - **OCR Processing**: Extract text from Thai bank receipts using PaddleOCR
@@ -180,6 +197,100 @@ ocr-bank2/
 └── README.md
 ```
 
+## 📦 Deployment
+
+### Production Deployment
+
+**Free Deployment Guide:**
+- [QUICK_DEPLOY.md](QUICK_DEPLOY.md) - 30-minute quick deployment
+- [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) - Comprehensive deployment guide
+
+**Deployment Scripts:**
+```bash
+# Organize project for deployment
+./scripts/organize-project.sh
+
+# Deploy backend to Railway
+./scripts/deploy-backend.sh
+
+# Deploy frontend to Vercel
+./scripts/deploy-frontend.sh
+
+# Test deployment
+./scripts/test-deployment.sh <backend-url> <frontend-url>
+```
+
+**Services Used (All Free):**
+- **Frontend:** Vercel (React hosting)
+- **Backend:** Railway (FastAPI hosting)
+- **Database:** Supabase (PostgreSQL)
+
+**Deployment Documentation:**
+- [Deployment Guide](docs/deployment/DEPLOYMENT_GUIDE.md) - Detailed deployment instructions
+- [Deployment Checklist](docs/deployment/DEPLOYMENT_CHECKLIST.md) - Pre-deployment checklist
+- [Setup Guide](docs/deployment/SETUP-COMPLETE.md) - Post-deployment setup
+
+---
+
+## Project Structure
+
+### Organized Structure
+
+```
+ocr-bank2/
+├── backend/                    # FastAPI backend
+│   ├── app/                   # Application code
+│   │   ├── api/              # API endpoints
+│   │   ├── models/           # Database models
+│   │   ├── schemas/          # Pydantic schemas
+│   │   ├── services/         # Business logic
+│   │   ├── database/         # Database config
+│   │   └── main.py           # FastAPI app
+│   ├── scripts/              # Utility scripts
+│   ├── tests/                # Backend tests
+│   ├── config/               # Configuration files
+│   ├── requirements.txt      # Python dependencies
+│   └── alembic.ini           # Database migrations
+│
+├── frontend/                  # React frontend
+│   ├── src/
+│   │   ├── pages/           # Page components
+│   │   ├── components/      # Reusable components
+│   │   ├── services/        # API service layer
+│   │   ├── types/           # TypeScript types
+│   │   └── utils/           # Utility functions
+│   ├── package.json         # Node dependencies
+│   └── vite.config.ts       # Vite config
+│
+├── deployment/               # Deployment configurations
+│   ├── railway/             # Railway configs
+│   ├── vercel/              # Vercel configs
+│   └── supabase/            # Supabase configs
+│
+├── docs/                     # Documentation
+│   ├── guides/              # User guides
+│   ├── api/                 # API documentation
+│   └── deployment/          # Deployment guides
+│
+├── tests/                    # Test files and data
+│   ├── images/              # Test images
+│   └── data/                # Test data
+│
+├── scripts/                  # Deployment and utility scripts
+│   ├── organize-project.sh  # Project organization
+│   ├── deploy-backend.sh    # Backend deployment
+│   ├── deploy-frontend.sh   # Frontend deployment
+│   └── test-deployment.sh   # Deployment testing
+│
+├── docker-compose.yml        # Local development
+├── railway.toml             # Railway configuration
+├── README.md                # This file
+├── QUICK_DEPLOY.md          # Quick deployment guide
+└── DEPLOY_INSTRUCTIONS.md   # Detailed deployment guide
+```
+
+---
+
 ## Current Implementation Status
 
 ### ✅ Completed
@@ -191,6 +302,8 @@ ocr-bank2/
 - Frontend React + TypeScript setup with Vite
 - Basic routing and navigation
 - TypeScript types and API service layer
+- **Deployment scripts and documentation**
+- **Organized project structure**
 
 ### 🚧 In Progress
 - Upload page with drag-and-drop

@@ -9,6 +9,8 @@ from app.database.connection import get_db
 from app.models.user_settings import UserSettings
 from app.models.receipt import Receipt
 from app.models.income_category import IncomeCategory
+from app.models.user import User
+from app.services.auth_service import get_current_active_user
 
 router = APIRouter()
 
@@ -20,11 +22,14 @@ class SalaryConfig(BaseModel):
 
 
 @router.get("/config")
-async def get_salary_config(db: Session = Depends(get_db)):
+async def get_salary_config(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """Get current salary configuration."""
-    settings = db.query(UserSettings).first()
+    settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
     if not settings:
-        settings = UserSettings()
+        settings = UserSettings(user_id=current_user.id)
         db.add(settings)
         db.commit()
         db.refresh(settings)
@@ -37,11 +42,15 @@ async def get_salary_config(db: Session = Depends(get_db)):
 
 
 @router.put("/config")
-async def update_salary_config(config: SalaryConfig, db: Session = Depends(get_db)):
+async def update_salary_config(
+    config: SalaryConfig,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """Update salary configuration and update current month's salary if exists."""
-    settings = db.query(UserSettings).first()
+    settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
     if not settings:
-        settings = UserSettings()
+        settings = UserSettings(user_id=current_user.id)
         db.add(settings)
 
     old_amount = settings.default_salary_amount
@@ -62,6 +71,7 @@ async def update_salary_config(config: SalaryConfig, db: Session = Depends(get_d
         month = today.month
 
         existing_salary = db.query(Receipt).filter(
+            Receipt.user_id == current_user.id,
             Receipt.is_salary == True,
             Receipt.extracted_date >= date(year, month, 1),
             Receipt.extracted_date <= date(year, month, monthrange(year, month)[1])
@@ -123,6 +133,7 @@ async def update_salary_config(config: SalaryConfig, db: Session = Depends(get_d
 async def check_and_generate_salary(
     year: int = None,
     month: int = None,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -131,7 +142,7 @@ async def check_and_generate_salary(
     If year/month not specified, uses current month.
     Called on app load and when viewing Receipts page for a specific month.
     """
-    settings = db.query(UserSettings).first()
+    settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
     if not settings or not settings.default_salary_amount:
         return {"status": "no_config", "message": "Salary not configured"}
 
@@ -147,6 +158,7 @@ async def check_and_generate_salary(
 
     # Check if salary entry exists for specified month
     existing_salary = db.query(Receipt).filter(
+        Receipt.user_id == current_user.id,
         Receipt.is_salary == True,
         Receipt.extracted_date >= date(year, month, 1),
         Receipt.extracted_date <= date(year, month, monthrange(year, month)[1])
@@ -168,6 +180,7 @@ async def check_and_generate_salary(
     salary_date = date(year, month, settings.salary_day_of_month)
 
     new_salary = Receipt(
+        user_id=current_user.id,
         filename=f"salary_{year}_{month}.txt",
         image_path="",
         ocr_raw_text=f"Auto-generated salary entry for {year}-{month:02d}",
@@ -224,10 +237,14 @@ async def check_and_generate_salary(
 @router.get("/history")
 async def get_salary_history(
     year: int = None,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """List all salary entries, optionally filtered by year."""
-    query = db.query(Receipt).filter(Receipt.is_salary == True)
+    query = db.query(Receipt).filter(
+        Receipt.user_id == current_user.id,
+        Receipt.is_salary == True
+    )
 
     if year:
         query = query.filter(

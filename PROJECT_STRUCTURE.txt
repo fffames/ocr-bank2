@@ -1,0 +1,111 @@
+OCR Bank - Project Structure
+=============================
+
+ocr-bank2/
+├── 📁 backend/                    # FastAPI backend application
+│   ├── 📁 app/                   # Main application code
+│   │   ├── 📁 api/              # API endpoints (upload, receipts, chat, etc.)
+│   │   ├── 📁 models/           # Database models
+│   │   ├── 📁 schemas/          # Pydantic schemas
+│   │   ├── 📁 services/         # Business logic (OCR, RAG, export)
+│   │   ├── 📁 database/         # Database configuration
+│   │   ├── 📁 templates/        # Template files
+│   │   ├── 📁 middleware/       # Custom middleware
+│   │   ├── 📁 utils/            # Utility functions
+│   │   ├── main.py              # FastAPI application entry point
+│   │   └── config.py            # Configuration management
+│   │
+│   ├── 📁 scripts/              # ✨ NEW: Utility scripts
+│   │   ├── extract_logos.py
+│   │   ├── cleanup_pending.py
+│   │   ├── reindex_receipts.py
+│   │   ├── create_user_settings_table.py
+│   │   ├── clean_vector_store.py
+│   │   ├── force_reindex.py
+│   │   ├── test_*.py            # Various test scripts
+│   │   └── ...                  # Other utility scripts
+│   │
+│   ├── 📁 tests/                # Backend tests
+│   ├── 📁 config/               # Configuration files
+│   ├── 📁 data/                 # Local data storage
+│   ├── 📁 images/               # Uploaded images
+│   ├── 📁 logs/                 # Application logs
+│   ├── 📁 venv/                 # Virtual environment
+│   └── requirements.txt         # Python dependencies
+│
+├── 📁 frontend/                  # React frontend application
+│   ├── 📁 src/                  # Source code
+│   │   ├── 📁 pages/           # Page components
+│   │   ├── 📁 components/      # Reusable components
+│   │   ├── 📁 services/        # API service layer
+│   │   ├── 📁 types/           # TypeScript types
+│   │   └── 📁 utils/           # Utility functions
+│   ├── 📁 dist/                # Build output
+│   ├── 📁 node_modules/        # Node dependencies
+│   ├── package.json            # Node dependencies
+│   └── vite.config.ts          # Vite configuration
+│
+├── 📁 deployment/               # ✨ NEW: Deployment configurations
+│   ├── 📁 railway/             # Railway-specific configs
+│   ├── 📁 vercel/              # Vercel-specific configs
+│   └── 📁 supabase/            # Supabase-specific configs
+│
+├── 📁 docs/                     # ✨ ORGANIZED: All documentation
+│   ├── 📁 guides/              # ✨ NEW: User and development guides
+│   │   ├── TESTING_GUIDE.md
+│   │   └── FIX_SUMMARY.md
+│   │
+│   ├── 📁 api/                 # ✨ NEW: API documentation
+│   │   └── API-ENDPOINTS.md
+│   │
+│   └── 📁 deployment/          # ✨ NEW: Deployment guides
+│       ├── DEPLOYMENT_GUIDE.md
+│       ├── DEPLOYMENT_CHECKLIST.md
+│       ├── SETUP-COMPLETE.md
+│       └── VLM_SETUP.md
+│
+├── 📁 tests/                    # ✨ NEW: Test files and data
+│   ├── 📁 images/              # ✨ NEW: Test images moved here
+│   │   ├── 116596.jpg
+│   │   ├── IMG_5095.PNG
+│   │   ├── IMG_5114.PNG
+│   │   ├── IMG_5328.PNG
+│   │   ├── IMG_8511.JPG
+│   │   ├── IMG_8595.JPG
+│   │   └── IMG_8606.JPG
+│   │
+│   └── 📁 data/                # ✨ NEW: Test data files
+│
+├── 📁 scripts/                  # ✨ NEW: Deployment and utility scripts
+│   ├── organize-project.sh     # ✨ Organize project structure
+│   ├── deploy-backend.sh       # ✨ Deploy backend to Railway
+│   ├── deploy-frontend.sh      # ✨ Deploy frontend to Vercel
+│   └── test-deployment.sh      # ✨ Test deployed application
+│
+├── 📄 README.md                 # ✨ UPDATED: Enhanced with deployment info
+├── 📄 QUICK_DEPLOY.md           # ✨ NEW: 30-minute quick deployment
+├── 📄 DEPLOY_INSTRUCTIONS.md    # ✨ NEW: Complete deployment guide
+├── 📄 ORGANIZATION_SUMMARY.md   # ✨ NEW: Organization summary
+├── 📄 docker-compose.yml        # Local development setup
+├── 📄 railway.toml             # Railway configuration
+└── 📄 .gitignore               # Git ignore rules
+
+✨ = NEW | 📁 = FOLDER | 📄 = FILE
+
+Key Improvements:
+-----------------
+✅ Test images organized in tests/images/
+✅ Documentation organized in docs/ subfolders
+✅ Backend utility scripts in backend/scripts/
+✅ Deployment scripts created in scripts/
+✅ Deployment configurations organized in deployment/
+✅ Comprehensive deployment guides created
+✅ Project structure clarified and documented
+
+Next Steps:
+----------
+1. Review QUICK_DEPLOY.md for 30-minute deployment
+2. Create cloud accounts (Railway, Vercel, Supabase)
+3. Get API keys (Groq, Gemini)
+4. Deploy using provided scripts or manual steps
+5. Test your deployed application

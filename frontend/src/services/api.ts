@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getToken, clearAuth } from '../utils/auth';
 
 // Get API URL from environment or use localhost for development
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -15,17 +16,48 @@ const directApi = axios.create({
   baseURL: `${API_URL}/api`,
 });
 
-// Request interceptor
+// Helper function to add auth header
+const addAuthHeader = (config: any) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+};
+
+// Request interceptor for api
 api.interceptors.request.use(
   (config) => {
-    return config;
+    return addAuthHeader(config);
   },
   (error) => {
     return Promise.reject(error);
   }
 );
 
-// Response interceptor
+// Request interceptor for directApi
+directApi.interceptors.request.use(
+  (config) => {
+    return addAuthHeader(config);
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor to handle 401 errors
+const handleAuthError = (error: any) => {
+  if (error.response?.status === 401) {
+    // Clear auth data and redirect to login
+    clearAuth();
+    if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+      window.location.href = '/login';
+    }
+  }
+  return Promise.reject(error);
+};
+
+// Response interceptor for api
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -36,7 +68,7 @@ api.interceptors.response.use(
     } else {
       console.error('Error:', error.message);
     }
-    return Promise.reject(error);
+    return handleAuthError(error);
   }
 );
 
@@ -50,7 +82,7 @@ directApi.interceptors.response.use(
     } else {
       console.error('Error:', error.message);
     }
-    return Promise.reject(error);
+    return handleAuthError(error);
   }
 );
 

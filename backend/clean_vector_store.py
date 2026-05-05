@@ -1,83 +1,84 @@
-#!/usr/bin/env python3
-"""
-Clean vector store by removing receipts that don't exist in database.
-"""
+"""Clean stale entries from vector store and re-index current receipts."""
 import sys
 import os
+import chromadb
 
+# Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from sqlalchemy import create_engine, text
-from app.services.vector_store import get_vector_store
+from app.database.connection import get_db
+from app.models.receipt import Receipt
 from app.config import settings
 
-def main():
-    print("🧹 Cleaning vector store...")
+def clean_and_reindex():
+    """Clean vector store and re-index all current receipts."""
+    print("🧹 Starting vector store cleanup and reindexing...\n")
 
-    # Get all IDs from vector store
-    vector_store = get_vector_store()
-    results = vector_store.search("test", n_results=100)
-    vector_ids = [r['id'] for r in results]
+    # Get database session
+    db = next(get_db())
 
-    print(f"📦 Vector store has {len(vector_ids)} receipts")
+    # Step 1: Delete and recreate the collection (proper cleanup)
+    print("🗑️  Deleting and recreating vector store collection...")
+    client = chromadb.PersistentClient(path=settings.chromadb_persist_directory)
 
-    if len(vector_ids) == 0:
-        print("✅ Vector store is already clean!")
+    # Delete the old collection
+    try:
+        client.delete_collection("receipts")
+        print("✅ Old collection deleted")
+    except:
+        print("⚠️  Collection didn't exist or couldn't be deleted")
+
+    # Create a new collection
+    collection = client.get_or_create_collection(
+        name="receipts",
+        metadata={"description": "Receipt data for semantic search"}
+    )
+    print("✅ New collection created\n")
+
+    # Step 2: Get all receipts from database
+    receipts = db.query(Receipt).all()
+    print(f"📊 Found {len(receipts)} receipts in database")
+
+    if not receipts:
+        print("⚠️  No receipts to re-index")
         return
 
-    # Get all valid IDs from database
-    engine = create_engine(settings.database_url)
-    with engine.connect() as conn:
-        result = conn.execute(text("SELECT id FROM receipts"))
-        db_ids = set(row[0] for row in result.fetchall())
+    # Step 3: Re-index each receipt
+    print(f"\n📝 Re-indexing receipts...")
+    from app.services.vector_store import VectorStore
+    vector_store = VectorStore()  # Create new instance with fresh collection
 
-    print(f"💾 Database has {len(db_ids)} receipts")
+    success_count = 0
+    failed_count = 0
 
-    # Find invalid IDs
-    invalid_ids = [vid for vid in vector_ids if vid not in db_ids]
-    valid_ids = [vid for vid in vector_ids if vid in db_ids]
+    for receipt in receipts:
+        try:
+            receipt_data = {
+                'extracted_date': receipt.extracted_date.isoformat() if receipt.extracted_date else None,
+                'sender': receipt.sender,
+                'receiver': receipt.receiver,
+                'amount': float(receipt.amount) if receipt.amount else None,
+                'note': receipt.note,
+                'transaction_type': receipt.transaction_type,
+                'income_category': receipt.income_category
+            }
+            vector_store.index_receipt(receipt.id, receipt_data)
+            success_count += 1
+        except Exception as e:
+            print(f"❌ Failed to index receipt {receipt.id}: {e}")
+            failed_count += 1
 
-    print(f"\n✅ Valid IDs in vector store: {len(valid_ids)}")
-    print(f"❌ Invalid IDs to remove: {len(invalid_ids)}")
+    print(f"\n✅ Re-indexing complete!")
+    print(f"   Success: {success_count}")
+    print(f"   Failed: {failed_count}")
+    print(f"   Total in vector store: {vector_store.get_count()}")
+    print(f"   Total in database: {len(receipts)}")
 
-    if invalid_ids:
-        print(f"\n🗑️  Removing {len(invalid_ids)} invalid IDs...")
-        for vid in invalid_ids:
-            try:
-                vector_store.collection.delete(ids=[str(vid)])
-            except Exception as e:
-                print(f"Error deleting ID {vid}: {e}")
-
-        # Verify cleanup
-        remaining = vector_store.search("test", n_results=100)
-        print(f"\n✅ Cleanup complete! Vector store now has {len(remaining)} receipts")
-
-        # Re-index valid receipts to ensure they're properly stored
-        if valid_ids:
-            print(f"\n🔄 Re-indexing {len(valid_ids)} valid receipts...")
-            with engine.connect() as conn:
-                for vid in valid_ids[:10]:  # Limit to first 10 for speed
-                    result = conn.execute(text(
-                        """SELECT id, sender, receiver, amount, extracted_date, note
-                           FROM receipts WHERE id = :id"""
-                    ), {"id": vid})
-                    row = result.fetchone()
-
-                    if row and (row[1] or row[2] or row[3]):  # Has data
-                        receipt_data = {
-                            'extracted_date': row[4].isoformat() if row[4] else None,
-                            'sender': row[1],
-                            'receiver': row[2],
-                            'amount': float(row[3]) if row[3] else None,
-                            'note': row[5]
-                        }
-                        vector_store.index_receipt(vid, receipt_data)
-
-            print(f"✅ Re-indexing complete!")
-            print(f"📦 Final vector store count: {vector_store.get_count()}")
-
+    # Verify
+    if vector_store.get_count() == len(receipts):
+        print("✅ Vector store is now synchronized with database!")
     else:
-        print("✅ Vector store is already clean!")
+        print("⚠️  Warning: Count mismatch - some receipts may not be indexed")
 
 if __name__ == "__main__":
-    main()
+    clean_and_reindex()

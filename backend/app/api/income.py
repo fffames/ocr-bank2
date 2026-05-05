@@ -8,6 +8,8 @@ from decimal import Decimal
 from app.database.connection import get_db
 from app.models.receipt import Receipt
 from app.models.income_category import IncomeCategory
+from app.models.user import User
+from app.services.auth_service import get_current_active_user
 
 router = APIRouter()
 
@@ -95,8 +97,12 @@ async def delete_income_category(category_id: int, db: Session = Depends(get_db)
 
 
 # Manual Income endpoints
-@router.post("/")
-async def create_income(income: ManualIncomeCreate, db: Session = Depends(get_db)):
+@router.post("")
+async def create_income(
+    income: ManualIncomeCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """Add manual income entry."""
     if income.amount <= 0:
         raise HTTPException(status_code=400, detail="Amount must be greater than 0")
@@ -111,10 +117,11 @@ async def create_income(income: ManualIncomeCreate, db: Session = Depends(get_db
 
     # Get user's name from settings to use as receiver
     from app.models.user_settings import UserSettings
-    user_settings = db.query(UserSettings).first()
+    user_settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
     user_name = user_settings.user_name if user_settings else None
 
     new_income = Receipt(
+        user_id=current_user.id,
         filename=f"income_{income.income_date.isoformat()}.txt",
         image_path="",
         ocr_raw_text=f"Manual income entry: {income.note}",
@@ -170,6 +177,7 @@ async def create_income(income: ManualIncomeCreate, db: Session = Depends(get_db
 async def update_income(
     income_id: int,
     income: ManualIncomeUpdate,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """Update manual income entry."""
@@ -203,7 +211,7 @@ async def update_income(
 
     # Ensure receiver is always set to user's name from settings
     from app.models.user_settings import UserSettings
-    user_settings = db.query(UserSettings).first()
+    user_settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
     if user_settings and user_settings.user_name:
         db_income.receiver = user_settings.user_name
 
@@ -239,7 +247,11 @@ async def update_income(
 
 
 @router.delete("/{income_id}")
-async def delete_income(income_id: int, db: Session = Depends(get_db)):
+async def delete_income(
+    income_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """Delete manual income entry."""
     income = db.query(Receipt).filter(
         Receipt.id == income_id,

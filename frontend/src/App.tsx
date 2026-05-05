@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Upload, FileText, MessageSquare, BarChart3, Home, Code2, User, Grid3x3, Settings as SettingsIcon } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { Upload, FileText, MessageSquare, BarChart3, Home, Code2, User, Grid3x3, Settings as SettingsIcon, LogOut, Shield } from 'lucide-react';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import UploadPage from './pages/Upload';
 import ReviewPage from './pages/Review';
 import ReceiptsListPage from './pages/ReceiptsList';
@@ -9,9 +12,11 @@ import ReceiptsListDebugPage from './pages/ReceiptsListDebug';
 import ChatPage from './pages/Chat';
 import SettingsPage from './pages/Settings';
 import AnalyticsPage from './pages/Analytics';
+import Admin from './pages/Admin';
 import TemplateBuilder from './pages/developer/TemplateBuilder';
 import TemplateManagement from './pages/developer/TemplateManagement';
 import { receiptService } from './services/receiptService';
+import { getUser, logoutUser } from './utils/auth';
 import './styles/developer.css';
 
 function App() {
@@ -31,6 +36,14 @@ function App() {
 }
 
 function UserModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'developer') => void }) {
+  const navigate = useNavigate();
+  const currentUser = getUser();
+
+  const handleLogout = () => {
+    logoutUser();
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation Bar */}
@@ -45,7 +58,7 @@ function UserModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'develope
             </div>
 
             <div className="flex items-center space-x-4">
-              <NavLink to="/" icon={<Home size={20} />}>
+              <NavLink to="/dashboard" icon={<Home size={20} />}>
                 Dashboard
               </NavLink>
               <NavLink to="/upload" icon={<Upload size={20} />}>
@@ -63,6 +76,11 @@ function UserModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'develope
               <NavLink to="/analytics" icon={<BarChart3 size={20} />}>
                 Analytics
               </NavLink>
+              {currentUser?.is_admin && (
+                <NavLink to="/admin" icon={<Shield size={20} />}>
+                  Admin
+                </NavLink>
+              )}
               <button
                 onClick={() => onModeChange('developer')}
                 className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
@@ -70,6 +88,18 @@ function UserModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'develope
                 <Code2 size={20} />
                 <span>Developer Mode</span>
               </button>
+              <div className="flex items-center space-x-2 border-l border-gray-300 pl-4">
+                <span className="text-sm text-gray-600">
+                  {currentUser?.name || currentUser?.email?.split('@')[0]}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center space-x-1 px-2 py-1 rounded text-sm text-gray-600 hover:bg-gray-100 transition-colors"
+                  title="Logout"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -78,14 +108,93 @@ function UserModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'develope
       {/* Main Content */}
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/upload" element={<UploadPage />} />
-          <Route path="/review" element={<ReviewPage />} />
-          <Route path="/receipts" element={<ReceiptsListPage />} />
-          <Route path="/receipts-debug" element={<ReceiptsListDebugPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
+          {/* Protected routes */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/dashboard" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/upload"
+            element={
+              <ProtectedRoute>
+                <UploadPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/review"
+            element={
+              <ProtectedRoute>
+                <ReviewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/receipts"
+            element={
+              <ProtectedRoute>
+                <ReceiptsListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/receipts-debug"
+            element={
+              <ProtectedRoute>
+                <ReceiptsListDebugPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute>
+                <ChatPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <AnalyticsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin route - protected and admin-only */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <Admin />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
     </div>
@@ -93,6 +202,14 @@ function UserModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'develope
 }
 
 function DeveloperModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'developer') => void }) {
+  const navigate = useNavigate();
+  const currentUser = getUser();
+
+  const handleLogout = () => {
+    logoutUser();
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen">
       {/* Developer Navigation */}
@@ -115,6 +232,16 @@ function DeveloperModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'dev
             </div>
 
             <div className="flex items-center space-x-4">
+              <span className="text-sm text-[var(--dev-text-secondary)]">
+                {currentUser?.name || currentUser?.email?.split('@')[0]}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-1 px-2 py-1 rounded text-sm text-[var(--dev-text-secondary)] hover:bg-[var(--dev-bg-tertiary)] transition-colors"
+                title="Logout"
+              >
+                <LogOut size={16} />
+              </button>
               <button
                 onClick={() => onModeChange('user')}
                 className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium bg-[var(--dev-bg-tertiary)] text-[var(--dev-text-primary)] border border-[var(--dev-border)] hover:border-[var(--dev-accent)] transition-colors"
@@ -129,9 +256,30 @@ function DeveloperModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'dev
 
       {/* Main Content */}
       <Routes>
-        <Route path="/developer/templates" element={<TemplateManagement />} />
-        <Route path="/developer/template-builder" element={<TemplateBuilder />} />
-        <Route path="/developer/template-builder/:templateId" element={<TemplateBuilder />} />
+        <Route
+          path="/developer/templates"
+          element={
+            <ProtectedRoute>
+              <TemplateManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/developer/template-builder"
+          element={
+            <ProtectedRoute>
+              <TemplateBuilder />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/developer/template-builder/:templateId"
+          element={
+            <ProtectedRoute>
+              <TemplateBuilder />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </div>
   );

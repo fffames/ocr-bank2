@@ -7,6 +7,8 @@ import json
 
 from app.database.connection import get_db
 from app.models.user_settings import UserSettings
+from app.models.user import User
+from app.services.auth_service import get_current_active_user
 
 router = APIRouter()
 
@@ -18,21 +20,27 @@ class UserSettingsUpdate(BaseModel):
 
 
 @router.get("/settings")
-async def get_user_settings(db: Session = Depends(get_db)):
+async def get_user_settings(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """
-    Get user settings (creates default if not exists).
+    Get user settings for the current user (creates default if not exists).
 
     Returns:
         User settings with user_name, name_variations, auto_classify
     """
-    settings = db.query(UserSettings).first()
+    settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
 
     if not settings:
-        # Create default settings
+        # Create default settings for current user
         settings = UserSettings(
-            user_name="",
+            user_id=current_user.id,
+            user_name=current_user.name or current_user.email.split("@")[0],
             user_name_variations="[]",
-            auto_classify=True
+            auto_classify=True,
+            salary_day_of_month=1,
+            salary_category="Salary"
         )
         db.add(settings)
         db.commit()
@@ -48,22 +56,29 @@ async def get_user_settings(db: Session = Depends(get_db)):
 @router.put("/settings")
 async def update_user_settings(
     settings_update: UserSettingsUpdate,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
-    Update user settings.
+    Update user settings for the current user.
 
     Args:
         settings_update: User settings to update
+        current_user: Authenticated user
 
     Returns:
         Updated user settings
     """
-    settings = db.query(UserSettings).first()
+    settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
 
     if not settings:
         # Create if doesn't exist
-        settings = UserSettings()
+        settings = UserSettings(
+            user_id=current_user.id,
+            user_name=current_user.name or current_user.email.split("@")[0],
+            user_name_variations="[]",
+            auto_classify=True
+        )
         db.add(settings)
 
     if settings_update.user_name is not None:

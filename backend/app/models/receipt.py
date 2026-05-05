@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Text, DECIMAL, Date, Time, TIMESTAMP, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Text, DECIMAL, Date, Time, TIMESTAMP, DateTime, Boolean, ForeignKey
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.database.connection import Base
 
 
@@ -7,6 +8,7 @@ class Receipt(Base):
     __tablename__ = "receipts"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)  # NEW: User ownership
     filename = Column(String(255), nullable=False)
     image_path = Column(Text, nullable=False)
     ocr_raw_text = Column(Text)
@@ -29,14 +31,21 @@ class Receipt(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
+    # Relationship to user
+    user = relationship("User", backref="receipts")
+
 
 class ChatHistory(Base):
     __tablename__ = "chat_history"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)  # NEW: User ownership (nullable for backward compatibility)
     session_id = Column(String(255), nullable=False)
     user_message = Column(Text, nullable=False)
     bot_response = Column(Text, nullable=False)
     context_receipts = Column(Text)  # JSON serialized list of receipt IDs
     created_at = Column(TIMESTAMP, server_default=func.now())
     llm_provider = Column(String(50), default="gemini")
+
+    # Relationship to user
+    user = relationship("User", backref="chat_history")

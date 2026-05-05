@@ -369,6 +369,11 @@ export default function ReceiptsListPage() {
         updateData.income_category = editForm.income_category;
       }
 
+      // Auto-change status from 'pending' to 'confirmed' when editing
+      if (editingReceipt.status === 'pending') {
+        updateData.status = 'confirmed';
+      }
+
       await receiptService.updateReceipt(editingReceipt.id, updateData);
       alert('✅ Receipt updated successfully');
       handleCloseEditModal();

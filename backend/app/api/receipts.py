@@ -5,7 +5,9 @@ from datetime import date, datetime
 
 from app.database.connection import get_db
 from app.models.receipt import Receipt
+from app.models.user import User
 from app.schemas.receipt import ReceiptCreate, ReceiptUpdate, ReceiptResponse
+from app.services.auth_service import get_current_active_user
 
 router = APIRouter()
 
@@ -19,6 +21,7 @@ def list_receipts(
     date_to: Optional[date] = None,
     sender: Optional[str] = None,
     transaction_type: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -32,12 +35,14 @@ def list_receipts(
         date_to: Filter by date to (inclusive)
         sender: Filter by sender name
         transaction_type: Filter by transaction type (sending, receiving, unknown)
+        current_user: Authenticated user
         db: Database session
 
     Returns:
-        List of receipts
+        List of receipts for the current user
     """
-    query = db.query(Receipt)
+    # Filter by current user
+    query = db.query(Receipt).filter(Receipt.user_id == current_user.id)
 
     # Apply filters
     if status:
@@ -65,18 +70,26 @@ def list_receipts(
 
 
 @router.get("/{receipt_id}", response_model=ReceiptResponse)
-def get_receipt(receipt_id: int, db: Session = Depends(get_db)):
+def get_receipt(
+    receipt_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """
     Get a specific receipt by ID.
 
     Args:
         receipt_id: ID of the receipt
+        current_user: Authenticated user
         db: Database session
 
     Returns:
         Receipt details
     """
-    receipt = db.query(Receipt).filter(Receipt.id == receipt_id).first()
+    receipt = db.query(Receipt).filter(
+        Receipt.id == receipt_id,
+        Receipt.user_id == current_user.id
+    ).first()
 
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
@@ -88,6 +101,7 @@ def get_receipt(receipt_id: int, db: Session = Depends(get_db)):
 def update_receipt(
     receipt_id: int,
     receipt_update: ReceiptUpdate,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -96,12 +110,16 @@ def update_receipt(
     Args:
         receipt_id: ID of the receipt to update
         receipt_update: Updated receipt data
+        current_user: Authenticated user
         db: Database session
 
     Returns:
         Updated receipt
     """
-    receipt = db.query(Receipt).filter(Receipt.id == receipt_id).first()
+    receipt = db.query(Receipt).filter(
+        Receipt.id == receipt_id,
+        Receipt.user_id == current_user.id
+    ).first()
 
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
@@ -129,18 +147,26 @@ def update_receipt(
 
 
 @router.post("/{receipt_id}/confirm", response_model=ReceiptResponse)
-def confirm_receipt(receipt_id: int, db: Session = Depends(get_db)):
+def confirm_receipt(
+    receipt_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """
     Mark receipt as confirmed (verified by user).
 
     Args:
         receipt_id: ID of the receipt to confirm
+        current_user: Authenticated user
         db: Database session
 
     Returns:
         Updated receipt with confirmed status
     """
-    receipt = db.query(Receipt).filter(Receipt.id == receipt_id).first()
+    receipt = db.query(Receipt).filter(
+        Receipt.id == receipt_id,
+        Receipt.user_id == current_user.id
+    ).first()
 
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
@@ -153,18 +179,26 @@ def confirm_receipt(receipt_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{receipt_id}")
-def delete_receipt(receipt_id: int, db: Session = Depends(get_db)):
+def delete_receipt(
+    receipt_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """
     Delete a receipt.
 
     Args:
         receipt_id: ID of the receipt to delete
+        current_user: Authenticated user
         db: Database session
 
     Returns:
         Success message
     """
-    receipt = db.query(Receipt).filter(Receipt.id == receipt_id).first()
+    receipt = db.query(Receipt).filter(
+        Receipt.id == receipt_id,
+        Receipt.user_id == current_user.id
+    ).first()
 
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
@@ -197,6 +231,7 @@ def delete_receipt(receipt_id: int, db: Session = Depends(get_db)):
 def get_receipt_stats(
     year: int = None,
     month: int = None,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -205,6 +240,7 @@ def get_receipt_stats(
     Args:
         year: Filter by year (optional)
         month: Filter by month (optional)
+        current_user: Authenticated user
         db: Database session
 
     Returns:
@@ -226,27 +262,28 @@ def get_receipt_stats(
         end_date = None
         date_filter = False
 
-    # Base query with optional date filter
-    def apply_date_filter(query):
+    # Base query with user filter and optional date filter
+    def apply_filters(query):
+        query = query.filter(Receipt.user_id == current_user.id)
         if date_filter:
-            return query.filter(
+            query = query.filter(
                 Receipt.extracted_date >= start_date,
                 Receipt.extracted_date <= end_date
             )
         return query
 
     # Total receipts
-    total_receipts = apply_date_filter(db.query(Receipt)).count()
+    total_receipts = apply_filters(db.query(Receipt)).count()
 
     # Calculate sending amount (paying out)
-    sending_amount_result = apply_date_filter(db.query(func.sum(Receipt.amount))).filter(
+    sending_amount_result = apply_filters(db.query(func.sum(Receipt.amount))).filter(
         Receipt.transaction_type == "sending",
         Receipt.amount.isnot(None)
     ).first()
     sending_amount = float(sending_amount_result[0]) if sending_amount_result[0] else 0.0
 
     # Calculate receiving amount (income)
-    receiving_amount_result = apply_date_filter(db.query(func.sum(Receipt.amount))).filter(
+    receiving_amount_result = apply_filters(db.query(func.sum(Receipt.amount))).filter(
         Receipt.transaction_type == "receiving",
         Receipt.amount.isnot(None)
     ).first()
@@ -255,19 +292,19 @@ def get_receipt_stats(
     # Net amount = receiving - sending
     net_amount = receiving_amount - sending_amount
 
-    pending_count = apply_date_filter(db.query(Receipt)).filter(Receipt.status == "pending").count()
-    reviewed_count = apply_date_filter(db.query(Receipt)).filter(Receipt.status == "reviewed").count()
-    confirmed_count = apply_date_filter(db.query(Receipt)).filter(Receipt.status == "confirmed").count()
+    pending_count = apply_filters(db.query(Receipt)).filter(Receipt.status == "pending").count()
+    reviewed_count = apply_filters(db.query(Receipt)).filter(Receipt.status == "reviewed").count()
+    confirmed_count = apply_filters(db.query(Receipt)).filter(Receipt.status == "confirmed").count()
 
     # Count by transaction type
-    sending_count = apply_date_filter(db.query(Receipt)).filter(Receipt.transaction_type == "sending").count()
-    receiving_count = apply_date_filter(db.query(Receipt)).filter(Receipt.transaction_type == "receiving").count()
+    sending_count = apply_filters(db.query(Receipt)).filter(Receipt.transaction_type == "sending").count()
+    receiving_count = apply_filters(db.query(Receipt)).filter(Receipt.transaction_type == "receiving").count()
 
     # Income breakdown by category (including manual income and salary)
     income_by_category = []
 
     # Get all receiving transactions with income category
-    receiving_with_category = apply_date_filter(db.query(Receipt)).filter(
+    receiving_with_category = apply_filters(db.query(Receipt)).filter(
         Receipt.transaction_type == "receiving",
         Receipt.income_category.isnot(None),
         Receipt.amount.isnot(None)
@@ -312,6 +349,7 @@ async def reprocess_receipt_ocr(
     receipt_id: int,
     template_id: str,
     ocr_method: str = "auto",  # Options: "auto", "template", "ai"
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -321,6 +359,7 @@ async def reprocess_receipt_ocr(
         receipt_id: ID of the receipt to reprocess
         template_id: Template ID to use for OCR
         ocr_method: OCR method to use ("auto", "template", "ai")
+        current_user: Authenticated user
         db: Database session
 
     Returns:
@@ -331,7 +370,10 @@ async def reprocess_receipt_ocr(
     from app.config import settings
 
     # Get the receipt
-    receipt = db.query(Receipt).filter(Receipt.id == receipt_id).first()
+    receipt = db.query(Receipt).filter(
+        Receipt.id == receipt_id,
+        Receipt.user_id == current_user.id
+    ).first()
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
 
