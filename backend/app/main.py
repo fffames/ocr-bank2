@@ -22,6 +22,9 @@ async def startup_event():
     # Create ChromaDB directory
     os.makedirs(settings.chromadb_persist_directory, exist_ok=True)
 
+    # Create uploads directory
+    os.makedirs("uploads", exist_ok=True)
+
     # Create config directory for Google Sheets credentials
     config_dir = os.path.dirname(settings.google_sheets_credentials_path)
     if config_dir and not os.path.exists(config_dir):
@@ -30,6 +33,7 @@ async def startup_event():
     print(f"✅ Directories created:")
     print(f"   - Images: {settings.image_storage_path}")
     print(f"   - ChromaDB: {settings.chromadb_persist_directory}")
+    print(f"   - Uploads: uploads")
     print(f"   - Config: {config_dir}")
 
 # Add validation error handler
@@ -50,10 +54,9 @@ async def validation_exception_handler(request, exc: RequestValidationError):
 
 from fastapi.staticfiles import StaticFiles
 
-# Mount static files for images
-# In production (Railway), images are stored in /data/images
-# In development, they're in ./backend/images
-app.mount("/images", StaticFiles(directory=settings.image_storage_path), name="images")
+# Mount static files for images (only if directory exists)
+if os.path.exists(settings.image_storage_path):
+    app.mount("/images", StaticFiles(directory=settings.image_storage_path), name="images")
 
 # Configure CORS from environment variable
 # Default to localhost for development
@@ -85,18 +88,22 @@ async def health_check():
 
 
 # Import routers
-from app.api import upload, receipts, chat, templates, user_settings, export, income, income_categories, salary, ocr_corrections, auth, admin
+try:
+    from app.api import upload, receipts, chat, templates, user_settings, export, income, income_categories, salary, ocr_corrections, auth, admin
 
-app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
-app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
-app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
-app.include_router(receipts.router, prefix="/api/receipts", tags=["receipts"])
-app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
-app.include_router(templates.router, prefix="/api", tags=["templates"])
-app.include_router(user_settings.router, prefix="/api/user", tags=["user_settings"])
-app.include_router(export.router, prefix="/api/export", tags=["export"])
-app.include_router(income.router, prefix="/api/income", tags=["income"])
-app.include_router(income_categories.router, prefix="/api/income-categories", tags=["income_categories"])
-app.include_router(salary.router, prefix="/api/salary", tags=["salary"])
-app.include_router(ocr_corrections.router, prefix="/api", tags=["ocr_corrections"])
-# app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
+    app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
+    app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
+    app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
+    app.include_router(receipts.router, prefix="/api/receipts", tags=["receipts"])
+    app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+    app.include_router(templates.router, prefix="/api", tags=["templates"])
+    app.include_router(user_settings.router, prefix="/api/user", tags=["user_settings"])
+    app.include_router(export.router, prefix="/api/export", tags=["export"])
+    app.include_router(income.router, prefix="/api/income", tags=["income"])
+    app.include_router(income_categories.router, prefix="/api/income-categories", tags=["income_categories"])
+    app.include_router(salary.router, prefix="/api/salary", tags=["salary"])
+    app.include_router(ocr_corrections.router, prefix="/api", tags=["ocr_corrections"])
+    # app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
+    print("✅ All routers imported successfully")
+except Exception as e:
+    print(f"⚠️  Warning: Some routers failed to import: {e}")

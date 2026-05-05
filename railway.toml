@@ -7,6 +7,8 @@ healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 rootDirectory = "."
+# Give app more time to start (Railway needs time to pull Docker image)
+startTimeout = 600
 
 [env]
 PORT = "8000"
