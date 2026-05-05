@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     vlm_provider: Literal["groq", "gemini"] = "groq"
 
     # OCR Engine
-    ocr_engine: Literal["tesseract", "paddleocr"] = "paddleocr"
+    ocr_engine: Literal["tesseract", "paddleocr"] = "tesseract"
 
     # OCR Configuration
     ocr_language: str = "th"
