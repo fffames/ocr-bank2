@@ -7,7 +7,7 @@ healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 rootDirectory = "."
-startTimeout = 300
+startTimeout = 600
 
 [env]
-PORT = "8000"
+# Don't set PORT - let Railway assign it automatically

@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 import os
 import sys
 
@@ -8,6 +9,12 @@ print(f"Working directory: {os.getcwd()}")
 print(f"Files in current directory: {os.listdir('.')}")
 
 app = FastAPI(title="Test API")
+
+@app.on_event("startup")
+async def startup():
+    print("✅ FastAPI app startup complete!")
+    port = os.getenv("PORT", "unknown")
+    print(f"🎯 Listening on port: {port}")
 
 @app.get("/")
 async def root():
@@ -20,7 +27,11 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy"}
+    # Simple, fast healthcheck response
+    return JSONResponse(
+        content={"status": "healthy"},
+        status_code=200
+    )
 
 if __name__ == "__main__":
     import uvicorn
