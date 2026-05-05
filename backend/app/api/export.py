@@ -44,10 +44,14 @@ async def export_to_excel(
 
         # Apply date range filter
         if date_from:
-            query = query.filter(Receipt.extracted_date >= date_from)
+            # Convert to string if it's a date object
+            date_from_str = date_from.strftime("%Y-%m-%d") if hasattr(date_from, 'strftime') else str(date_from)
+            query = query.filter(Receipt.extracted_date >= date_from_str)
         if date_to:
+            # Convert to string if it's a date object
+            date_to_str = date_to.strftime("%Y-%m-%d") if hasattr(date_to, 'strftime') else str(date_to)
             # Include the full day by adding one day and using < instead of <=
-            date_to_end = datetime.strptime(date_to, "%Y-%m-%d") + timedelta(days=1)
+            date_to_end = datetime.strptime(date_to_str, "%Y-%m-%d") + timedelta(days=1)
             query = query.filter(Receipt.extracted_date < date_to_end)
 
         # Apply transaction type filter
