@@ -1,13 +1,13 @@
 [build]
-builder = "NIXPACKS"
+builder = "DOCKERFILE"
+dockerfilePath = "backend/Dockerfile.simple"
 
 [deploy]
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
-rootDirectory = "backend"
-startTimeout = 600
+rootDirectory = "."
+startTimeout = 900
 
 [env]
 PORT = "8000"
-PYTHON_VERSION = "3.11"
