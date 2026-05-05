@@ -465,7 +465,7 @@ export default function ReviewPage() {
 
           <form className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-black mb-1">
                 Date
               </label>
               <input
@@ -473,12 +473,12 @@ export default function ReviewPage() {
                 value={editedData.extracted_date || currentReceipt.extracted_date || ''}
                 onChange={(e) => setEditedData({ ...editedData, extracted_date: e.target.value })}
                 disabled={!isEditing}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-white disabled:text-black disabled:border-gray-300 disabled:cursor-default"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-black mb-1">
                 Time
               </label>
               <input
@@ -486,12 +486,12 @@ export default function ReviewPage() {
                 value={editedData.extracted_time || currentReceipt.extracted_time || ''}
                 onChange={(e) => setEditedData({ ...editedData, extracted_time: e.target.value })}
                 disabled={!isEditing}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-white disabled:text-black disabled:border-gray-300 disabled:cursor-default"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-black mb-1">
                 Sender
               </label>
               <input
@@ -500,12 +500,12 @@ export default function ReviewPage() {
                 onChange={(e) => setEditedData({ ...editedData, sender: e.target.value })}
                 disabled={!isEditing}
                 placeholder="Sender name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-white disabled:text-black disabled:border-gray-300 disabled:cursor-default"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-black mb-1">
                 Receiver
               </label>
               <input
@@ -514,12 +514,12 @@ export default function ReviewPage() {
                 onChange={(e) => setEditedData({ ...editedData, receiver: e.target.value })}
                 disabled={!isEditing}
                 placeholder="Receiver name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-white disabled:text-black disabled:border-gray-300 disabled:cursor-default"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-black mb-1">
                 Amount (THB)
               </label>
               <input
@@ -529,12 +529,12 @@ export default function ReviewPage() {
                 onChange={(e) => setEditedData({ ...editedData, amount: parseFloat(e.target.value) })}
                 disabled={!isEditing}
                 placeholder="0.00"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-white disabled:text-black disabled:border-gray-300 disabled:cursor-default"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-black mb-1">
                 Note (Optional)
               </label>
               <textarea
@@ -543,19 +543,19 @@ export default function ReviewPage() {
                 disabled={!isEditing}
                 rows={3}
                 placeholder="Additional notes"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-white disabled:text-black disabled:border-gray-300 disabled:cursor-default"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-black mb-1">
                 Transaction Type
               </label>
               <select
                 value={editedData.transaction_type || currentReceipt.transaction_type || 'unknown'}
                 onChange={(e) => setEditedData({ ...editedData, transaction_type: e.target.value as 'sending' | 'receiving' | 'unknown' })}
                 disabled={!isEditing}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-white disabled:text-black disabled:border-gray-300 disabled:cursor-default"
               >
                 <option value="sending">↑ Sending (Paying)</option>
                 <option value="receiving">↓ Receiving (Income)</option>
