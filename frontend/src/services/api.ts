@@ -86,5 +86,5 @@ directApi.interceptors.response.use(
   }
 );
 
-export { directApi };
+export { directApi, API_URL };
 export default api;

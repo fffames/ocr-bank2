@@ -1,4 +1,4 @@
-import api from './api';
+import { API_URL } from './api';
 
 export interface ExportFilters {
   date_from?: string;
@@ -27,7 +27,7 @@ class ExportService {
       params.append('status', filters.status);
     }
 
-    const url = `${api.getBaseUrl()}/api/export/excel?${params.toString()}`;
+    const url = `${API_URL}/api/export/excel?${params.toString()}`;
 
     // Trigger browser download
     window.location.href = url;
@@ -37,7 +37,7 @@ class ExportService {
    * Get export service status
    */
   async getExportStatus(): Promise<any> {
-    const response = await fetch(`${api.getBaseUrl()}/api/export/status`);
+    const response = await fetch(`${API_URL}/api/export/status`);
     if (!response.ok) {
       throw new Error('Failed to get export status');
     }
