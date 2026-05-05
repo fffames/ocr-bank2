@@ -9,6 +9,8 @@ import os
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan and startup."""
+    print("🚀 Starting OCR Bank API...")
+
     # Startup
     try:
         # Create image storage directory
@@ -24,8 +26,11 @@ async def lifespan(app: FastAPI):
         print(f"   - Images: {settings.image_storage_path}")
         print(f"   - ChromaDB: {settings.chromadb_persist_directory}")
         print(f"   - Uploads: uploads")
+
     except Exception as e:
         print(f"⚠️  Warning: Error creating directories: {e}")
+
+    print("✅ OCR Bank API startup complete!")
 
     yield
 
@@ -76,28 +81,40 @@ async def root():
         "status": "running"
     }
 
-# Health check endpoint
+# Health check endpoint - CRITICAL FOR RAILWAY
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
 # Import routers with better error handling
+print("📦 Loading API routers...")
 try:
-    from app.api import upload, receipts, chat, templates, user_settings, export, income, income_categories, salary, ocr_corrections, auth, admin
+    from app.api import auth, admin, upload, receipts, chat, templates, user_settings, export, income, income_categories, salary, ocr_corrections
 
     app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
+    print("  ✅ Authentication router loaded")
+
     app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
-    app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
-    app.include_router(receipts.router, prefix="/api/receipts", tags=["receipts"])
-    app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
-    app.include_router(templates.router, prefix="/api", tags=["templates"])
-    app.include_router(user_settings.router, prefix="/api/user", tags=["user_settings"])
-    app.include_router(export.router, prefix="/api/export", tags=["export"])
-    app.include_router(income.router, prefix="/api/income", tags=["income"])
-    app.include_router(income_categories.router, prefix="/api/income-categories", tags=["income_categories"])
-    app.include_router(salary.router, prefix="/api/salary", tags=["salary"])
-    app.include_router(ocr_corrections.router, prefix="/api", tags=["ocr_corrections"])
-    print("✅ All routers imported successfully")
+    print("  ✅ Admin router loaded")
+
+    # Load these routers only if database is configured
+    if settings.database_url and "localhost" not in settings.database_url:
+        app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
+        app.include_router(receipts.router, prefix="/api/receipts", tags=["receipts"])
+        app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+        app.include_router(templates.router, prefix="/api", tags=["templates"])
+        app.include_router(user_settings.router, prefix="/api/user", tags=["user_settings"])
+        app.include_router(export.router, prefix="/api/export", tags=["export"])
+        app.include_router(income.router, prefix="/api/income", tags=["income"])
+        app.include_router(income_categories.router, prefix="/api/income-categories", tags=["income_categories"])
+        app.include_router(salary.router, prefix="/api/salary", tags=["salary"])
+        app.include_router(ocr_corrections.router, prefix="/api", tags=["ocr_corrections"])
+        print("  ✅ Database-dependent routers loaded")
+    else:
+        print("  ⚠️  Database not configured - skipping database routers")
+
+    print("✅ All routers loaded successfully")
+
 except Exception as e:
-    print(f"⚠️  Warning: Some routers failed to import: {e}")
+    print(f"⚠️  Warning: Router import error: {e}")
     print("⚠️  App will start with limited functionality")
