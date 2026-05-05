@@ -11,7 +11,6 @@ asyncpg>=0.29.0
 
 # Image Processing
 pillow>=10.2.0
-base64>=1.0.0
 opencv-python>=4.9.0.80
 pytesseract>=0.3.10
 pyyaml>=6.0.1
@@ -24,10 +23,9 @@ google-generativeai>=0.3.2
 chromadb==0.4.22
 groq>=0.11.0
 
-# Google Sheets
-google-api-python-client>=2.116.0
-google-auth-httplib2>=0.2.0
-google-auth-oauthlib>=1.2.0
+# Excel handling
+openpyxl>=3.1.0
+
 
 # Utilities
 python-dotenv>=1.0.0
@@ -44,4 +42,3 @@ python-jose[cryptography]==3.3.0
 pytest>=7.4.4
 pytest-asyncio>=0.23.3
 httpx>=0.26.0
-gspread>=6.1.0
