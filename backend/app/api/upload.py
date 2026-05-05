@@ -14,7 +14,6 @@ from app.models.user import User
 from app.models.user_settings import UserSettings
 from app.services.gemini_vlm_service import get_gemini_vlm_service
 from app.services.vlm_service import get_vlm_service
-from app.services.lm_studio_vlm_service import get_lm_studio_vlm_service
 from app.services.template_ocr_service import get_template_ocr_service
 from app.services.auth_service import get_current_active_user
 from app.config import settings
@@ -68,15 +67,6 @@ async def upload_images(
             print("☁️  Groq VLM available (secondary fallback)")
         except Exception as e:
             print(f"⚠️  Groq VLM not available: {e}")
-            vlm_service = None
-
-    # LM Studio as last resort
-    if not vlm_service:
-        try:
-            vlm_service = get_lm_studio_vlm_service()
-            print("🖥️  LM Studio VLM available (last resort)")
-        except Exception as e:
-            print(f"⚠️  LM Studio VLM not available: {e}")
             vlm_service = None
 
     for file in files:

@@ -256,23 +256,26 @@ Go to **Variables** tab and add:
 # Database
 DATABASE_URL=postgresql://postgres:[PASSWORD]@db.xxx.supabase.co:5432/postgres
 
-# OCR Configuration
-OCR_LANGUAGE=th
-OCR_DEVICE=cpu
-
-# LLM Configuration
+# API Keys (use your actual API keys - never commit these)
 GROQ_API_KEY=gsk_your_actual_key_here
 GEMINI_API_KEY=AIzayour_actual_key_here
-LLM_PROVIDER=groq
+
+# LLM Configuration
+LLM_PROVIDER=gemini
 
 # VLM Configuration
 VLM_PROVIDER=groq
-LOCAL_LLM_URL=
+VLM_FALLBACK_ENABLED=true
 
-# Vector Store
+# OCR Configuration
+OCR_LANGUAGE=th
+OCR_DEVICE=cpu
+OCR_ENGINE=paddleocr
+
+# Vector Store (Railway persistent disk)
 CHROMADB_PERSIST_DIRECTORY=/data/chromadb
 
-# File Storage
+# File Storage (Railway persistent disk)
 IMAGE_STORAGE_PATH=/data/images
 MAX_UPLOAD_SIZE=10485760
 
@@ -282,10 +285,17 @@ GOOGLE_SHEETS_SPREADSHEET_ID=your_spreadsheet_id
 # CORS (update after frontend deployment)
 CORS_ORIGINS=http://localhost:5173,https://your-frontend.vercel.app
 
+# Security (CHANGE THIS IN PRODUCTION)
+SECRET_KEY=generate-secure-random-key-32-chars-min
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+
 # Server Configuration
 PORT=8000
 PYTHON_VERSION=3.11
 ```
+
+**Note:** See [backend/.env.example](backend/.env.example) for all available environment variables and their descriptions.
 
 #### 3.5 Add Persistent Disk
 
@@ -391,12 +401,18 @@ vercel
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://...` | ✅ Yes |
 | `GROQ_API_KEY` | Groq API key for LLM | `gsk_...` | ✅ Yes |
 | `GEMINI_API_KEY` | Gemini API key for LLM | `AIza...` | ✅ Yes |
-| `LLM_PROVIDER` | LLM provider to use | `groq` | ✅ Yes |
+| `LLM_PROVIDER` | LLM provider to use | `gemini` | ✅ Yes |
+| `VLM_PROVIDER` | VLM provider for OCR | `groq` | ✅ Yes |
+| `VLM_FALLBACK_ENABLED` | Enable VLM fallback for missing OCR fields | `true` | ✅ Yes |
 | `OCR_LANGUAGE` | OCR language | `th` | ✅ Yes |
 | `OCR_DEVICE` | Device for OCR | `cpu` | ✅ Yes |
+| `OCR_ENGINE` | OCR engine to use | `paddleocr` | ✅ Yes |
 | `CHROMADB_PERSIST_DIRECTORY` | Vector store path | `/data/chromadb` | ✅ Yes |
 | `IMAGE_STORAGE_PATH` | Image storage path | `/data/images` | ✅ Yes |
+| `MAX_UPLOAD_SIZE` | Max file upload size in bytes | `10485760` | ✅ Yes |
 | `CORS_ORIGINS` | Allowed CORS origins | `https://...` | ✅ Yes |
+| `SECRET_KEY` | JWT secret key (CHANGE IN PRODUCTION) | `your-secret-key` | ✅ Yes |
+| `DEBUG` | Debug mode | `false` | ✅ Yes |
 | `PORT` | Server port | `8000` | ✅ Yes |
 
 #### Frontend Environment Variables
@@ -593,8 +609,10 @@ os.makedirs(settings.image_storage_path, exist_ok=True)
 **Solution:**
 ```bash
 # Check API keys are set in Railway variables
-# Ensure LLM_PROVIDER=groq (not lm_studio)
+# Ensure LLM_PROVIDER=gemini (not local_gemma)
+# Ensure VLM_PROVIDER=groq (not lm_studio)
 # Verify API keys are valid and not expired
+# Check that API keys have required permissions
 ```
 
 #### 6. Build Failures

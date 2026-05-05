@@ -80,7 +80,9 @@ pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your configuration (see below)
+# Edit .env with your API keys and configuration
+# IMPORTANT: Never commit .env to git (it's in .gitignore)
+# See .env.example for all available variables
 
 # Start PostgreSQL
 docker compose up -d
@@ -288,6 +290,38 @@ ocr-bank2/
 ├── QUICK_DEPLOY.md          # Quick deployment guide
 └── DEPLOY_INSTRUCTIONS.md   # Detailed deployment guide
 ```
+
+---
+
+## 🆕 Recent Updates (May 2026)
+
+### Production-Ready Configuration
+- **Security Enhancement**: Removed local LLM dependencies (LM Studio, local Gemma)
+- **API Key Management**: Created `.env.example` template for safe deployment
+- **Cloud-Ready Paths**: Default storage paths now use `/tmp` for cloud compatibility
+- **Cleaner Codebase**: Removed unused local LLM service files
+- **Better Defaults**: Production-ready configuration in `backend/app/config.py`
+
+### Files Changed
+- ✅ `backend/.env.example` - New production template (safe to commit to git)
+- ✅ `backend/.env` - Updated for local development only
+- ✅ `backend/app/config.py` - Removed `lm_studio` and `local_gemma` options
+- ✅ `backend/app/api/upload.py` - Removed LM Studio fallback logic
+- ✅ `backend/app/services/llm_interface.py` - Simplified to cloud APIs only
+- ✅ `backend/app/services/lm_studio_vlm_service.py` - Removed (no longer needed)
+
+### Deployment Benefits
+1. **Simpler Setup**: No local LLM configuration needed for deployment
+2. **Better Security**: API keys properly managed via environment variables
+3. **Cloud-Native**: Uses cloud APIs (Gemini, Groq) instead of local models
+4. **Easier Maintenance**: Fewer dependencies and moving parts
+5. **Production-Ready**: All configuration externalized via environment variables
+
+### API Keys Required for Deployment
+- Groq API Key ([Get free key](https://console.groq.com))
+- Gemini API Key ([Get free key](https://ai.google.dev))
+
+See [QUICK_DEPLOY.md](QUICK_DEPLOY.md) for deployment instructions.
 
 ---
 

@@ -64,23 +64,35 @@ In Railway dashboard, add these variables:
 # Database (from Supabase)
 DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@db.xxx.supabase.co:5432/postgres
 
-# LLM (use your actual API keys)
+# API Keys (use your actual API keys - never commit these)
 GROQ_API_KEY=gsk_your_actual_key
 GEMINI_API_KEY=AIzayour_actual_key
-LLM_PROVIDER=groq
 
-# OCR & Storage
+# LLM Configuration
+LLM_PROVIDER=gemini
+VLM_PROVIDER=groq
+VLM_FALLBACK_ENABLED=true
+
+# OCR Configuration
 OCR_LANGUAGE=th
 OCR_DEVICE=cpu
+OCR_ENGINE=paddleocr
+
+# Storage (Railway persistent disk)
 CHROMADB_PERSIST_DIRECTORY=/data/chromadb
 IMAGE_STORAGE_PATH=/data/images
 
 # CORS (update after frontend deployment)
 CORS_ORIGINS=http://localhost:5173
 
+# Security (CHANGE THIS IN PRODUCTION)
+SECRET_KEY=generate-secure-random-key-32-chars-min
+
 # Port
 PORT=8000
 ```
+
+**Note:** Use [backend/.env.example](backend/.env.example) as a reference for all available environment variables.
 
 **Add Persistent Disk:**
 1. In Railway service: **Storage** tab

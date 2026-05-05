@@ -75,13 +75,22 @@ This comprehensive guide includes:
 - `railway.toml` - Railway deployment configuration
 - `.railwayignore` - Files to exclude from Railway
 - `frontend/.env.production.example` - Frontend environment template
-- `backend/.env.production.example` - Backend environment template
+- `backend/.env.example` - Backend environment template (production-ready)
 
 ### Code Updates
 - `frontend/src/services/api.ts` - Uses environment variables for API URL
 - `frontend/src/vite-env.d.ts` - TypeScript definitions for Vite env vars
-- `backend/app/config.py` - Added CORS configuration
+- `backend/app/config.py` - Production-ready configuration with /tmp paths
 - `backend/app/main.py` - Startup event for directory creation
+- `backend/.env` - Local development (NOT for deployment)
+- `backend/.env.example` - Template for deployment (safe to commit)
+
+### Security Improvements
+- ✅ API keys removed from code
+- ✅ `.env.example` file created with safe placeholders
+- ✅ Local LLM dependencies removed (no more LM Studio)
+- ✅ Production-ready path defaults (`/tmp` for cloud environments)
+- ✅ JWT secret key configuration
 
 ## 🔧 Key Changes from Development
 
@@ -138,14 +147,41 @@ For more troubleshooting, see the [Deployment Guide](./DEPLOYMENT_GUIDE.md).
 
 ## 🔒 Security Checklist
 
-- [ ] Never commit API keys to GitHub
+- [x] Never commit API keys to GitHub (`.env` in `.gitignore`)
+- [x] Use `.env.example` template for deployment
+- [x] Local LLM dependencies removed (security improvement)
 - [ ] Use strong password for database
 - [ ] Limit CORS to your frontend domain only
 - [ ] Add rate limiting to API endpoints
 - [ ] Validate and sanitize user inputs
 - [ ] Use HTTPS (automatic on all platforms)
+- [ ] Generate secure `SECRET_KEY` for production (not the default)
 - [ ] Regular security updates
 - [ ] Monitor for suspicious activity
+
+## 🆕 Recent Updates (May 2026)
+
+### Security & Configuration Improvements
+- **Removed Local LLM Dependencies**: No more LM Studio or local Gemma dependencies
+- **API Key Management**: Created `.env.example` template for safe deployment
+- **Production-Ready Paths**: Default paths now use `/tmp` for cloud compatibility
+- **Environment Variables**: Updated all configuration to use environment variables
+- **Cleaner Codebase**: Removed unused local LLM service files
+
+### Files Changed
+- ✅ `backend/.env.example` - New production template (safe to commit)
+- ✅ `backend/.env` - Updated for local development (not for deployment)
+- ✅ `backend/app/config.py` - Removed local LLM options
+- ✅ `backend/app/api/upload.py` - Removed LM Studio fallback
+- ✅ `backend/app/services/llm_interface.py` - Simplified to cloud APIs only
+- ✅ `backend/app/services/lm_studio_vlm_service.py` - Removed (no longer needed)
+
+### Deployment Benefits
+1. **Simpler Setup**: No local LLM configuration needed
+2. **Better Security**: API keys properly managed
+3. **Cloud-Ready**: Uses cloud APIs (Gemini, Groq) instead of local models
+4. **Cleaner Code**: Removed unused dependencies and files
+5. **Easier Debugging**: Fewer moving parts in production
 
 ## 💰 Cost Summary
 
