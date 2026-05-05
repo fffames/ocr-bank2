@@ -1,4 +1,12 @@
 import { useState, useEffect } from 'react';
+
+// Helper function to format date as local date string (YYYY-MM-DD) without timezone conversion
+function formatDateLocal(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 import { Search, Trash2, Eye, Calendar, DollarSign, FileSpreadsheet, Download, Plus, X, Edit2, Check, CheckSquare } from 'lucide-react';
 import { Receipt } from '../types/receipt';
 import { receiptService } from '../services/receiptService';
@@ -423,8 +431,8 @@ export default function ReceiptsListPage() {
           const month = parseInt(monthFilter);
           const startDate = new Date(year, month - 1, 1);
           const endDate = new Date(year, month, 0); // Last day of month
-          filters.date_from = startDate.toISOString().split('T')[0];
-          filters.date_to = endDate.toISOString().split('T')[0];
+          filters.date_from = formatDateLocal(startDate);
+          filters.date_to = formatDateLocal(endDate);
         } else {
           // Entire year
           filters.date_from = `${year}-01-01`;
@@ -436,8 +444,8 @@ export default function ReceiptsListPage() {
         const month = parseInt(monthFilter);
         const startDate = new Date(currentYear, month - 1, 1);
         const endDate = new Date(currentYear, month, 0); // Last day of month
-        filters.date_from = startDate.toISOString().split('T')[0];
-        filters.date_to = endDate.toISOString().split('T')[0];
+        filters.date_from = formatDateLocal(startDate);
+        filters.date_to = formatDateLocal(endDate);
       }
 
       console.log('📤 Exporting with filters:', filters);
