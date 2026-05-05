@@ -3,19 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from app.config import settings
+from contextlib import asynccontextmanager
 import os
 
-# Create FastAPI app
-app = FastAPI(
-    title="OCR Bank API",
-    description="Bank receipt OCR and RAG chatbot API",
-    version="1.0.0"
-)
-
-# Startup event - create necessary directories
-@app.on_event("startup")
-async def startup_event():
-    """Create necessary directories on startup."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifespan and startup."""
+    # Startup
     try:
         # Create image storage directory
         os.makedirs(settings.image_storage_path, exist_ok=True)
@@ -26,9 +20,25 @@ async def startup_event():
         # Create uploads directory
         os.makedirs("uploads", exist_ok=True)
 
-        print(f"✅ Directories created successfully")
+        print("✅ Directories created successfully")
+        print(f"   - Images: {settings.image_storage_path}")
+        print(f"   - ChromaDB: {settings.chromadb_persist_directory}")
+        print(f"   - Uploads: uploads")
     except Exception as e:
         print(f"⚠️  Warning: Error creating directories: {e}")
+
+    yield
+
+    # Shutdown
+    print("👋 OCR Bank API shutting down...")
+
+# Create FastAPI app
+app = FastAPI(
+    title="OCR Bank API",
+    description="Bank receipt OCR and RAG chatbot API",
+    version="1.0.0",
+    lifespan=lifespan
+)
 
 # Add validation error handler
 @app.exception_handler(RequestValidationError)
@@ -47,7 +57,6 @@ async def validation_exception_handler(request, exc: RequestValidationError):
     )
 
 # Configure CORS from environment variable
-# Default to localhost for development
 cors_origins = settings.cors_origins.split(",") if settings.cors_origins else ["http://localhost:5173", "http://localhost:3000"]
 
 app.add_middleware(
@@ -67,7 +76,7 @@ async def root():
         "status": "running"
     }
 
-# Health check endpoint - MOST IMPORTANT FOR RAILWAY
+# Health check endpoint
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}

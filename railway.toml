@@ -1,14 +1,13 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "backend/Dockerfile.minimal"
+dockerfilePath = "backend/Dockerfile"
 
 [deploy]
-# Temporarily disable healthcheck to test deployment
-# healthcheckPath = "/health"
-# healthcheckTimeout = 600
+healthcheckPath = "/health"
+healthcheckTimeout = 600
 restartPolicyType = "ON_FAILURE"
 rootDirectory = "."
-startTimeout = 600
+startTimeout = 900
 
 [env]
-# Don't set PORT - let Railway assign it automatically
+PORT = "8000"
