@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 try:
     from openpyxl import Workbook
-    from openpyxl.styles import Font, Alignment, NumberFormat
+    from openpyxl.styles import Font, Alignment
     EXCEL_AVAILABLE = True
 except ImportError:
     EXCEL_AVAILABLE = False

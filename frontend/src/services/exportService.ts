@@ -30,34 +30,46 @@ class ExportService {
 
     const url = `/export/excel?${params.toString()}`;
 
-    // Use api client to get the file with auth headers
-    const response = await api.get(url, {
-      responseType: 'blob'
-    });
+    try {
+      // Use api client to get the file with auth headers
+      const response = await api.get(url, {
+        responseType: 'blob'
+      });
 
-    // Create blob URL for download
-    const blob = new Blob([response.data], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    });
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-
-    // Get filename from Content-Disposition header or use default
-    const contentDisposition = response.headers['content-disposition'];
-    let filename = 'OCR_Bank_Export.xlsx';
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename=(?:"([^"]+)"|([^;\s]+))/);
-      if (filenameMatch) {
-        filename = filenameMatch[1] || filenameMatch[2];
+      // Check if response is an error (JSON with error message)
+      if (response.data.type === 'application/json') {
+        const text = await response.data.text();
+        const error = JSON.parse(text);
+        throw new Error(error.detail || 'Export failed');
       }
-    }
 
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(downloadUrl);
+      // Create blob URL for download
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'OCR_Bank_Export.xlsx';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename=(?:"([^"]+)"|([^;\s]+))/);
+        if (filenameMatch) {
+          filename = filenameMatch[1] || filenameMatch[2];
+        }
+      }
+
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error: any) {
+      console.error('Export error:', error);
+      throw error;
+    }
   }
 
   /**
