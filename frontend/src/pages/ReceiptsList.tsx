@@ -430,6 +430,14 @@ export default function ReceiptsListPage() {
           filters.date_from = `${year}-01-01`;
           filters.date_to = `${year}-12-31`;
         }
+      } else if (monthFilter !== 'all') {
+        // Month selected but no year - use current year
+        const currentYear = new Date().getFullYear();
+        const month = parseInt(monthFilter);
+        const startDate = new Date(currentYear, month - 1, 1);
+        const endDate = new Date(currentYear, month, 0); // Last day of month
+        filters.date_from = startDate.toISOString().split('T')[0];
+        filters.date_to = endDate.toISOString().split('T')[0];
       }
 
       console.log('📤 Exporting with filters:', filters);
