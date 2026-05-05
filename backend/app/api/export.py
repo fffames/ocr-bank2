@@ -46,7 +46,10 @@ async def export_to_excel(
         if date_from:
             query = query.filter(Receipt.extracted_date >= date_from)
         if date_to:
-            query = query.filter(Receipt.extracted_date <= date_to)
+            # Include the full day by adding one day and using < instead of <=
+            from datetime import timedelta
+            date_to_end = datetime.strptime(date_to, "%Y-%m-%d") + timedelta(days=1)
+            query = query.filter(Receipt.extracted_date < date_to_end)
 
         # Apply transaction type filter
         if transaction_type and transaction_type != "all":
