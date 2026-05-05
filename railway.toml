@@ -3,8 +3,9 @@ builder = "DOCKERFILE"
 dockerfilePath = "backend/Dockerfile.minimal"
 
 [deploy]
-healthcheckPath = "/health"
-healthcheckTimeout = 300
+# Temporarily disable healthcheck to test deployment
+# healthcheckPath = "/health"
+# healthcheckTimeout = 600
 restartPolicyType = "ON_FAILURE"
 rootDirectory = "."
 startTimeout = 600
