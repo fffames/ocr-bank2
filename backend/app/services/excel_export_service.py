@@ -73,7 +73,7 @@ class ExcelExportService:
         ws = wb.create_sheet(title=sheet_name)
 
         # Define headers
-        headers = ["Date", "Sender/Receiver", "Amount (THB)", "Note"]
+        headers = ["Date", "Sender", "Receiver", "Amount (THB)", "Note"]
 
         # Write headers
         for col_num, header in enumerate(headers, 1):
@@ -87,19 +87,19 @@ class ExcelExportService:
             if receipt.extracted_date:
                 ws.cell(row=row_num, column=1, value=receipt.extracted_date.isoformat())
 
-            # Sender/Receiver
-            if receipt.transaction_type == "sending":
-                ws.cell(row=row_num, column=2, value=receipt.receiver or "")
-            else:  # receiving
-                ws.cell(row=row_num, column=2, value=receipt.sender or "")
+            # Sender
+            ws.cell(row=row_num, column=2, value=receipt.sender or "")
+
+            # Receiver
+            ws.cell(row=row_num, column=3, value=receipt.receiver or "")
 
             # Amount
             if receipt.amount:
-                cell = ws.cell(row=row_num, column=3, value=float(receipt.amount))
+                cell = ws.cell(row=row_num, column=4, value=float(receipt.amount))
                 cell.number_format = '#,##0.00'
 
             # Note
-            ws.cell(row=row_num, column=4, value=receipt.note or "")
+            ws.cell(row=row_num, column=5, value=receipt.note or "")
 
         # Auto-adjust column widths
         for column in ws.columns:
