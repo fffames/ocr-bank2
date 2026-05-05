@@ -19,5 +19,5 @@ RUN mkdir -p /app/images /app/data/chromadb /app/uploads
 # Expose port
 EXPOSE 8000
 
-# Run the application
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the debug app to test startup
+CMD ["sh", "-c", "echo '=== Starting App ===' && python -c 'from app.main_debug import app; import uvicorn; print(\"🎯 Starting server...\"); uvicorn.run(app, host=\"0.0.0.0\", port=8000)'"]
