@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 import os
 import sys
 
@@ -8,13 +9,17 @@ print(f"Python version: {sys.version}")
 print(f"Working directory: {os.getcwd()}")
 print(f"Files in current directory: {os.listdir('.')}")
 
-app = FastAPI(title="Test API")
-
-@app.on_event("startup")
-async def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
     print("✅ FastAPI app startup complete!")
     port = os.getenv("PORT", "unknown")
     print(f"🎯 Listening on port: {port}")
+    yield
+    # Shutdown
+    print("👋 FastAPI app shutting down...")
+
+app = FastAPI(title="Test API", lifespan=lifespan)
 
 @app.get("/")
 async def root():
