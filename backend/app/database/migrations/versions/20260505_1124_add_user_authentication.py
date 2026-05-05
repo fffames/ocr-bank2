@@ -57,15 +57,21 @@ def upgrade() -> None:
     op.alter_column('receipts', 'user_id', nullable=False)
     op.create_index('ix_receipts_user_id', 'receipts', ['user_id'])
 
-    # 5. Add user_id to user_settings table
-    op.add_column('user_settings', sa.Column('user_id', sa.Integer(), nullable=True))
+    # 5. Create user_settings table first
+    op.create_table(
+        'user_settings',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('user_name', sa.String(length=255), nullable=True),
+        sa.Column('user_name_variations', sa.Text(), nullable=True),
+        sa.Column('auto_classify', sa.Boolean(), nullable=False, server_default='true'),
+        sa.Column('default_salary_amount', sa.Numeric(10, 2), nullable=True),
+        sa.Column('salary_day_of_month', sa.Integer(), nullable=False, server_default='1'),
+        sa.Column('salary_category', sa.String(length=100), nullable=False, server_default='Salary'),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index('ix_user_settings_id', 'user_settings', ['id'])
     op.create_foreign_key('fk_user_settings_user_id', 'user_settings', 'users', ['user_id'], ['id'], ondelete='CASCADE')
-
-    # 6. Delete existing user_settings data
-    op.execute("DELETE FROM user_settings")
-
-    # 7. Make user_id NOT NULL and UNIQUE
-    op.alter_column('user_settings', 'user_id', nullable=False)
     op.create_index('ix_user_settings_user_id', 'user_settings', ['user_id'], unique=True)
 
     # 8. Add user_id to chat_history table (nullable for backward compatibility)
