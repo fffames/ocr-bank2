@@ -386,6 +386,7 @@ export default function ReceiptsListPage() {
 
   const handleExportAll = async () => {
     try {
+      // Export all receipts (no filters)
       await exportService.exportToExcel({});
       alert('✅ Excel download started!');
     } catch (error: any) {
@@ -400,7 +401,38 @@ export default function ReceiptsListPage() {
         alert('No receipts to export');
         return;
       }
-      await exportService.exportToExcel({});
+
+      // Build filters from current UI state
+      const filters: any = {};
+
+      // Add status filter
+      if (statusFilter !== 'all') {
+        filters.status = statusFilter;
+      }
+
+      // Add transaction type filter
+      if (typeFilter !== 'all') {
+        filters.transaction_type = typeFilter;
+      }
+
+      // Add date range filter from year/month
+      if (yearFilter !== 'all') {
+        const year = parseInt(yearFilter);
+        if (monthFilter !== 'all') {
+          // Specific month
+          const month = parseInt(monthFilter);
+          const startDate = new Date(year, month - 1, 1);
+          const endDate = new Date(year, month, 0); // Last day of month
+          filters.date_from = startDate.toISOString().split('T')[0];
+          filters.date_to = endDate.toISOString().split('T')[0];
+        } else {
+          // Entire year
+          filters.date_from = `${year}-01-01`;
+          filters.date_to = `${year}-12-31`;
+        }
+      }
+
+      await exportService.exportToExcel(filters);
       alert('✅ Excel download started!');
     } catch (error: any) {
       console.error('Export error:', error);
