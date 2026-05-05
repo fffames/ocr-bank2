@@ -64,3 +64,4 @@ frontend/build/
 # Git worktrees (isolated development)
 .worktrees/
 worktrees/
+backend/.env
