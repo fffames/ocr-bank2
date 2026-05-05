@@ -1,4 +1,5 @@
-import { API_URL } from './api';
+import api, { API_URL } from './api';
+import { getToken } from '../utils/auth';
 
 export interface ExportFilters {
   date_from?: string;
@@ -27,21 +28,44 @@ class ExportService {
       params.append('status', filters.status);
     }
 
-    const url = `${API_URL}/api/export/excel?${params.toString()}`;
+    const url = `/export/excel?${params.toString()}`;
 
-    // Trigger browser download
-    window.location.href = url;
+    // Use api client to get the file with auth headers
+    const response = await api.get(url, {
+      responseType: 'blob'
+    });
+
+    // Create blob URL for download
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+
+    // Get filename from Content-Disposition header or use default
+    const contentDisposition = response.headers['content-disposition'];
+    let filename = 'OCR_Bank_Export.xlsx';
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename=(?:"([^"]+)"|([^;\s]+))/);
+      if (filenameMatch) {
+        filename = filenameMatch[1] || filenameMatch[2];
+      }
+    }
+
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
   }
 
   /**
    * Get export service status
    */
   async getExportStatus(): Promise<any> {
-    const response = await fetch(`${API_URL}/api/export/status`);
-    if (!response.ok) {
-      throw new Error('Failed to get export status');
-    }
-    return response.json();
+    const response = await api.get('/export/status');
+    return response.data;
   }
 }
 
