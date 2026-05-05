@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Trash2, Eye, Calendar, DollarSign, FileSpreadsheet, Download, Plus, X, Edit2, Check, CheckSquare } from 'lucide-react';
 import { Receipt } from '../types/receipt';
 import { receiptService } from '../services/receiptService';
-import { exportService } from '../services/exportService';
+import exportService from '../services/exportService';
 import { analyticsService, ManualIncome } from '../services/analyticsService';
 import { format } from 'date-fns';
 
@@ -386,60 +386,35 @@ export default function ReceiptsListPage() {
 
   const handleExportAll = async () => {
     try {
-      const result = await exportService.exportToSheets();
-      if (result.success) {
-        setExportResult(result);
-      } else {
-        alert(`❌ Export failed: ${result.error}`);
-      }
+      await exportService.exportToExcel({});
+      alert('✅ Excel download started!');
     } catch (error: any) {
       console.error('Export error:', error);
-      if (error.response?.data?.detail) {
-        alert(`❌ Export failed: ${error.response.data.detail}`);
-      } else {
-        alert('❌ Export failed. Please check if Google Sheets is configured.');
-      }
+      alert('❌ Export failed. Please try again.');
     }
   };
 
   const handleExportFiltered = async () => {
     try {
-      const receiptIds = filteredReceipts.map(r => r.id);
-      if (receiptIds.length === 0) {
+      if (filteredReceipts.length === 0) {
         alert('No receipts to export');
         return;
       }
-      const result = await exportService.exportToSheets(receiptIds);
-      if (result.success) {
-        setExportResult(result);
-      } else {
-        alert(`❌ Export failed: ${result.error}`);
-      }
+      await exportService.exportToExcel({});
+      alert('✅ Excel download started!');
     } catch (error: any) {
       console.error('Export error:', error);
-      if (error.response?.data?.detail) {
-        alert(`❌ Export failed: ${error.response.data.detail}`);
-      } else {
-        alert('❌ Export failed. Please check if Google Sheets is configured.');
-      }
+      alert('❌ Export failed. Please try again.');
     }
   };
 
   const handleExportSummary = async () => {
     try {
-      const result = await exportService.exportSummary();
-      if (result.success) {
-        setExportResult(result);
-      } else {
-        alert(`❌ Export failed: ${result.error}`);
-      }
+      await exportService.exportToExcel({});
+      alert('✅ Excel download started!');
     } catch (error: any) {
       console.error('Export error:', error);
-      if (error.response?.data?.detail) {
-        alert(`❌ Export failed: ${error.response.data.detail}`);
-      } else {
-        alert('❌ Export failed. Please check if Google Sheets is configured.');
-      }
+      alert('❌ Export failed. Please try again.');
     }
   };
 
