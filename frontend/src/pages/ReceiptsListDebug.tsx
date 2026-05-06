@@ -77,7 +77,7 @@ export default function ReceiptsListDebugPage() {
                 <tr key={receipt.id}>
                   <td className="px-4 py-2 border">{receipt.id}</td>
                   <td className="px-4 py-2 border">{receipt.filename}</td>
-                  <td className="px-4 py-2 border">{receipt.extracted_date || 'N/A'}</td>
+                  <td className="px-4 py-2 border">{receipt.extracted_date instanceof Date ? receipt.extracted_date.toLocaleDateString() : (receipt.extracted_date || 'N/A')}</td>
                   <td className="px-4 py-2 border">{receipt.amount || 'N/A'}</td>
                 </tr>
               ))}

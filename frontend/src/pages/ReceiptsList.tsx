@@ -7,11 +7,12 @@ function formatDateLocal(date: Date): string {
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
-import { Search, Trash2, Eye, Calendar, DollarSign, FileSpreadsheet, Download, Plus, X, Edit2, Check, CheckSquare } from 'lucide-react';
+import { Search, Trash2, Eye, Calendar, DollarSign, FileSpreadsheet, Download, Plus, X, Edit2 } from 'lucide-react';
 import { Receipt } from '../types/receipt';
 import { receiptService } from '../services/receiptService';
 import exportService from '../services/exportService';
 import { analyticsService, ManualIncome } from '../services/analyticsService';
+import { API_URL } from '../services/api';
 import { format } from 'date-fns';
 
 interface ExportResult {
@@ -32,7 +33,6 @@ export default function ReceiptsListPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [pageSize, setPageSize] = useState<number>(100);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalReceipts, setTotalReceipts] = useState<number>(0);
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
   const [selectedReceiptIds, setSelectedReceiptIds] = useState<Set<number>>(new Set());
@@ -132,7 +132,6 @@ export default function ReceiptsListPage() {
       const data = await receiptService.getReceipts(params);
       console.log(`✅ Fetched ${data.length} receipts`);
       setReceipts(data);
-      setTotalReceipts(data.length); // Set total for pagination
     } catch (error) {
       console.error('❌ Error fetching receipts:', error);
       setReceipts([]);
@@ -304,19 +303,6 @@ export default function ReceiptsListPage() {
     }
   };
 
-  const handleDeleteIncome = async (id: number) => {
-    if (!confirm('Delete this income entry?')) return;
-
-    try {
-      await analyticsService.deleteIncome(id);
-      alert('✅ Income entry deleted');
-      fetchReceipts();
-    } catch (error: any) {
-      console.error('Failed to delete income:', error);
-      alert(`Failed to delete income: ${error.response?.data?.detail || error.message}`);
-    }
-  };
-
   // Receipt editing functions
   const handleEditReceipt = async (receipt: Receipt) => {
     // Load income categories if not already loaded
@@ -329,7 +315,7 @@ export default function ReceiptsListPage() {
       sender: receipt.sender || '',
       receiver: receipt.receiver || '',
       amount: receipt.amount ? String(receipt.amount) : '',
-      extracted_date: receipt.extracted_date || '',
+      extracted_date: receipt.extracted_date instanceof Date ? receipt.extracted_date.toISOString().split('T')[0] : (receipt.extracted_date || ''),
       extracted_time: receipt.extracted_time || '',
       note: receipt.note || '',
       transaction_type: receipt.transaction_type || 'unknown',
@@ -360,7 +346,7 @@ export default function ReceiptsListPage() {
       const updateData: any = {};
       if (editForm.sender !== editingReceipt.sender) updateData.sender = editForm.sender;
       if (editForm.receiver !== editingReceipt.receiver) updateData.receiver = editForm.receiver;
-      if (editForm.amount && parseFloat(editForm.amount) !== parseFloat(editingReceipt.amount || 0)) {
+      if (editForm.amount && parseFloat(editForm.amount) !== parseFloat(String(editingReceipt.amount || 0))) {
         updateData.amount = parseFloat(editForm.amount);
       }
       if (editForm.extracted_date && editForm.extracted_date !== editingReceipt.extracted_date) {
@@ -914,7 +900,7 @@ export default function ReceiptsListPage() {
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Original Image</h3>
                   <img
-                    src={`http://localhost:8000${selectedReceipt.image_path.replace('./backend/images', '/images')}`}
+                    src={`${API_URL}${selectedReceipt.image_path.replace('./backend/images', '/images')}`}
                     alt={selectedReceipt.filename}
                     className="w-full rounded-lg border border-gray-200"
                     onError={(e) => {

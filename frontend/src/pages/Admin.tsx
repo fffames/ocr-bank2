@@ -60,7 +60,7 @@ const Admin = () => {
     setError('');
 
     try {
-      const response = await api.post('/admin/users', newUser);
+      await api.post('/admin/users', newUser);
 
       // Reset form and refresh users
       setNewUser({ email: '', password: '', name: '' });

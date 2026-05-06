@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Save, CheckCircle, Edit2, RefreshCw, Grid3x3 } from 'lucide-react';
 import { Receipt, ReceiptUpdate } from '../types/receipt';
 import { receiptService } from '../services/receiptService';
+import { API_URL } from '../services/api';
 import ZoneOverlay from '../components/ZoneOverlay';
 
 export default function ReviewPage() {
@@ -113,7 +114,7 @@ export default function ReviewPage() {
 
   const handleEdit = () => {
     setEditedData({
-      extracted_date: currentReceipt?.extracted_date || undefined,
+      extracted_date: currentReceipt?.extracted_date instanceof Date ? currentReceipt.extracted_date.toISOString().split('T')[0] : (currentReceipt?.extracted_date || undefined),
       extracted_time: currentReceipt?.extracted_time || undefined,
       sender: currentReceipt?.sender || undefined,
       receiver: currentReceipt?.receiver || undefined,
@@ -217,7 +218,7 @@ export default function ReviewPage() {
   }
 
   const confidencePercent = currentReceipt.confidence_score
-    ? Math.round(currentReceipt.confidence_score * 100)
+    ? Math.round(parseFloat(String(currentReceipt.confidence_score)) * 100)
     : 0;
 
   const confidenceColor = confidencePercent >= 80 ? 'green' : confidencePercent >= 60 ? 'yellow' : 'red';
@@ -263,7 +264,7 @@ export default function ReviewPage() {
           <div className="relative bg-gray-100 rounded-lg overflow-hidden">
             <img
               ref={imageRef}
-              src={`http://localhost:8000${currentReceipt.image_path.replace('./backend/images', '/images')}`}
+              src={`${API_URL}${currentReceipt.image_path.replace('./backend/images', '/images')}`}
               alt={currentReceipt.filename}
               className="w-full h-auto"
               onLoad={handleImageLoad}
@@ -470,7 +471,7 @@ export default function ReviewPage() {
               </label>
               <input
                 type="date"
-                value={editedData.extracted_date || currentReceipt.extracted_date || ''}
+                value={editedData.extracted_date || (currentReceipt.extracted_date instanceof Date ? currentReceipt.extracted_date.toISOString().split('T')[0] : currentReceipt.extracted_date) || ''}
                 onChange={(e) => setEditedData({ ...editedData, extracted_date: e.target.value })}
                 disabled={!isEditing}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-white disabled:text-black disabled:border-gray-300 disabled:cursor-default"

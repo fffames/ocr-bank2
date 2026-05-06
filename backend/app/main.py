@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from contextlib import asynccontextmanager
 import os
@@ -111,6 +112,10 @@ try:
     print("  ✅ All database routers loaded")
 
     print("✅ All routers loaded successfully")
+
+    # Mount static files for image serving
+    app.mount("/tmp", StaticFiles(directory=settings.image_storage_path), name="images")
+    print(f"  ✅ Image serving mounted at /tmp -> {settings.image_storage_path}")
 
 except Exception as e:
     import traceback

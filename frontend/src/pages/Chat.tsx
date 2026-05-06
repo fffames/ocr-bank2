@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, FileText, Clock } from 'lucide-react';
 import { Receipt } from '../types/receipt';
+import { API_URL } from '../services/api';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -43,7 +44,7 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/chat/query', {
+      const response = await fetch(`${API_URL}/api/chat/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -187,7 +188,7 @@ export default function ChatPage() {
                               )}
                               {receipt.amount && (
                                 <span className="ml-2 font-semibold text-green-600">
-                                  ฿{receipt.amount.toFixed(2)}
+                                  ฿{typeof receipt.amount === 'number' ? receipt.amount.toFixed(2) : receipt.amount}
                                 </span>
                               )}
                             </div>

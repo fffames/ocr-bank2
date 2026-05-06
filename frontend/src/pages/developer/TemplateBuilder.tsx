@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Upload, Save, Trash2, TestTube, ArrowLeft, Grid3x3 } from 'lucide-react';
+import { API_URL } from '../../services/api';
 import '../../styles/developer.css';
 
 interface Zone {
@@ -76,7 +77,7 @@ export default function TemplateBuilder() {
 
   const fetchTemplate = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/templates/${id}`);
+      const response = await fetch(`${API_URL}/api/templates/${id}`);
       if (!response.ok) {
         throw new Error('Template not found');
       }
@@ -300,8 +301,8 @@ export default function TemplateBuilder() {
       // Check if we're creating or updating
       const isEditing = templateId !== undefined;
       const url = isEditing
-        ? `http://localhost:8000/api/templates/${templateId}`
-        : 'http://localhost:8000/api/templates/';
+        ? `${API_URL}/api/templates/${templateId}`
+        : '${API_URL}/api/templates/';
       const method = isEditing ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -343,7 +344,7 @@ export default function TemplateBuilder() {
     if (!imageSrc) return;
 
     try {
-      const response = await fetch('http://localhost:8000/api/templates/test-zone', {
+      const response = await fetch('${API_URL}/api/templates/test-zone', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -426,7 +427,7 @@ export default function TemplateBuilder() {
         formData.append('template_id', template.templateId || 'unknown');
         formData.append('logo_image', blob, 'logo.png');
 
-        const response = await fetch('http://localhost:8000/api/templates/upload-logo', {
+        const response = await fetch('${API_URL}/api/templates/upload-logo', {
           method: 'POST',
           body: formData
         });
@@ -486,7 +487,7 @@ export default function TemplateBuilder() {
         formData.append('template_id', (template.templateId || 'unknown') + '_header');
         formData.append('logo_image', blob, 'header.png');
 
-        const response = await fetch('http://localhost:8000/api/templates/upload-logo', {
+        const response = await fetch('${API_URL}/api/templates/upload-logo', {
           method: 'POST',
           body: formData
         });

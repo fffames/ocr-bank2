@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Edit, Download, RefreshCw, Grid3x3, Search } from 'lucide-react';
+import { API_URL } from '../../services/api';
 import '../../styles/developer.css';
 
 interface Template {
@@ -25,7 +26,7 @@ export default function TemplateManagement() {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/templates/');
+      const response = await fetch('${API_URL}/api/templates/');
       const data = await response.json();
       setTemplates(data);
     } catch (error) {
@@ -37,7 +38,7 @@ export default function TemplateManagement() {
 
   const handleDelete = async (templateId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/templates/${templateId}`, {
+      const response = await fetch(`${API_URL}/api/templates/${templateId}`, {
         method: 'DELETE'
       });
 
@@ -54,7 +55,7 @@ export default function TemplateManagement() {
 
   const exportTemplate = async (templateId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/templates/${templateId}`);
+      const response = await fetch(`${API_URL}/api/templates/${templateId}`);
       const template = await response.json();
 
       const yaml = `

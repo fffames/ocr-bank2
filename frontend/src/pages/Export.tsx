@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Download, Calendar, Filter } from 'lucide-react';
+import { useState } from 'react';
+import { Download, Filter } from 'lucide-react';
 import exportService from '../services/exportService';
 
 interface ExportFilters {
@@ -14,7 +14,7 @@ export default function ExportPage() {
     transaction_type: 'all',
     status: 'all'
   });
-  const [preview, setPreview] = useState<{payments: number; income: number} | null>(null);
+  const [preview] = useState<{payments: number; income: number} | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
