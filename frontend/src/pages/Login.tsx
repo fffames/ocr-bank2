@@ -110,18 +110,6 @@ const Login = () => {
               </Link>
             </p>
           </div>
-
-          <div className="mt-6 border-t border-gray-200 pt-6">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Demo Accounts:</h3>
-            <div className="space-y-2 text-xs text-gray-600">
-              <div className="bg-gray-100 p-2 rounded">
-                <strong>Admin:</strong> admin@ocrbank.local / OCR-Bank-Admin-2026!
-              </div>
-              <div className="bg-gray-100 p-2 rounded">
-                <strong>Dad:</strong> dad@ocrbank.local / Dad-Budget-2026!
-              </div>
-            </div>
-          </div>
         </form>
       </div>
     </div>
