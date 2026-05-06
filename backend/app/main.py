@@ -28,6 +28,13 @@ async def lifespan(app: FastAPI):
         print(f"   - ChromaDB: {settings.chromadb_persist_directory}")
         print(f"   - Uploads: uploads")
 
+        # Mount static files AFTER directories are created
+        try:
+            app.mount("/tmp", StaticFiles(directory=settings.image_storage_path), name="images")
+            print(f"  ✅ Image serving mounted at /tmp -> {settings.image_storage_path}")
+        except Exception as e:
+            print(f"  ⚠️  Could not mount image serving: {e}")
+
     except Exception as e:
         print(f"⚠️  Warning: Error creating directories: {e}")
 
@@ -112,10 +119,7 @@ try:
     print("  ✅ All database routers loaded")
 
     print("✅ All routers loaded successfully")
-
-    # Mount static files for image serving
-    app.mount("/tmp", StaticFiles(directory=settings.image_storage_path), name="images")
-    print(f"  ✅ Image serving mounted at /tmp -> {settings.image_storage_path}")
+    # Note: Static file serving is now mounted in lifespan() after directory creation
 
 except Exception as e:
     import traceback
