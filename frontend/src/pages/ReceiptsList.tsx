@@ -900,7 +900,7 @@ export default function ReceiptsListPage() {
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Original Image</h3>
                   <img
-                    src={`${API_URL}${selectedReceipt.image_path.replace('./backend/images', '/images')}`}
+                    src={`${API_URL}${selectedReceipt.image_path}`}
                     alt={selectedReceipt.filename}
                     className="w-full rounded-lg border border-gray-200"
                     onError={(e) => {
