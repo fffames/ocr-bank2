@@ -59,12 +59,13 @@ class VectorStore:
         # Lazy import to avoid startup overhead
         if not hasattr(self, '_embedding_model'):
             from sentence_transformers import SentenceTransformer
-            # Use multilingual model for Thai + English support
-            self._embedding_model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-            print("✅ Loaded sentence-transformers model (paraphrase-multilingual-MiniLM-L12-v2)")
+            # Use tiny model for Railway free tier compatibility (80MB vs 500MB)
+            # Still provides excellent semantic search while avoiding memory crashes
+            self._embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+            print("✅ Loaded lightweight sentence-transformers model (all-MiniLM-L6-v2)")
 
         # Generate embedding
-        embedding = self._embedding_model.encode(text).tolist()
+        embedding = self._embedding_model.encode(text, show_progress_bar=False).tolist()
         return embedding
 
     def index_receipt(self, receipt_id: int, receipt_data: Dict[str, Any]) -> None:

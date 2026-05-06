@@ -38,12 +38,12 @@ class VectorStore:
                 # Double-check pattern
                 if self._embedding_model is None:
                     from sentence_transformers import SentenceTransformer
-                    # Use a lighter, faster model for Thai + English
+                    # Use tiny model for Railway free tier compatibility (80MB vs 500MB)
                     self._embedding_model = SentenceTransformer(
-                        'paraphrase-multilingual-MiniLM-L12-v2',
+                        'all-MiniLM-L6-v2',
                         device='cpu'  # Force CPU to avoid GPU initialization issues
                     )
-                    print("✅ Loaded optimized sentence-transformers model")
+                    print("✅ Loaded lightweight sentence-transformers model (all-MiniLM-L6-v2)")
         return self._embedding_model
 
     def _generate_embedding(self, text: str) -> List[float]:
