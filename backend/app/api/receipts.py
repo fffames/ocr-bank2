@@ -139,6 +139,9 @@ def update_receipt(
         receipt.note = receipt_update.note
     if receipt_update.status is not None:
         receipt.status = receipt_update.status
+    # Add transaction_type support for editing
+    if receipt_update.transaction_type is not None:
+        receipt.transaction_type = receipt_update.transaction_type
 
     db.commit()
     db.refresh(receipt)
