@@ -30,8 +30,9 @@ async def lifespan(app: FastAPI):
 
         # Mount static files AFTER directories are created
         try:
-            app.mount("/tmp", StaticFiles(directory=settings.image_storage_path), name="images")
-            print(f"  ✅ Image serving mounted at /tmp -> {settings.image_storage_path}")
+            # Mount the full image path so /tmp/ocr_images/file.jpg works
+            app.mount("/tmp/ocr_images", StaticFiles(directory=settings.image_storage_path), name="images")
+            print(f"  ✅ Image serving mounted at /tmp/ocr_images -> {settings.image_storage_path}")
         except Exception as e:
             print(f"  ⚠️  Could not mount image serving: {e}")
 
