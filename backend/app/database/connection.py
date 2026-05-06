@@ -3,8 +3,16 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.config import settings
 
-# Create SQLAlchemy engine
-engine = create_engine(settings.database_url)
+# Create SQLAlchemy engine with proper URL encoding
+try:
+    database_url = settings.get_database_url()
+    print(f"🔗 Connecting to database...")
+    engine = create_engine(database_url)
+    print(f"✅ Database engine created successfully")
+except Exception as e:
+    print(f"❌ Error creating database engine: {e}")
+    print(f"   DATABASE_URL format may be incorrect")
+    raise
 
 # Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

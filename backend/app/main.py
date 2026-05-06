@@ -113,5 +113,7 @@ try:
     print("✅ All routers loaded successfully")
 
 except Exception as e:
+    import traceback
     print(f"⚠️  Warning: Router import error: {e}")
+    print(f"⚠️  Traceback: {traceback.format_exc()}")
     print("⚠️  App will start with limited functionality")
