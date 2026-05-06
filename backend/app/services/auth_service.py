@@ -1,4 +1,7 @@
-"""Authentication service for user management and JWT tokens."""
+"""Authentication service for user management and JWT tokens.
+
+Updated: 2026-05-06 - Fixed bcrypt password length limit (72 bytes)
+"""
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
