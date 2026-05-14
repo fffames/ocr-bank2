@@ -487,26 +487,26 @@ export default function ReceiptsListPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Receipts</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Receipts</h1>
 
       {/* Search and Filter */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row gap-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex flex-col md:flex-row gap-3 sm:gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
                 placeholder="Search by sender, receiver, or note..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
@@ -516,12 +516,12 @@ export default function ReceiptsListPage() {
           </div>
 
           {/* Additional Filters */}
-          <div className="flex flex-col md:flex-row gap-4 items-center">
+          <div className="grid grid-cols-2 sm:flex flex-col sm:flex-row gap-2 sm:gap-4 items-center">
             {/* Year Filter */}
             <select
               value={yearFilter}
               onChange={(e) => setYearFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="px-2 sm:px-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Years</option>
               <option value="2026">2026</option>
@@ -534,7 +534,7 @@ export default function ReceiptsListPage() {
             <select
               value={monthFilter}
               onChange={(e) => setMonthFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="px-2 sm:px-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Months</option>
               <option value="1">January</option>
@@ -555,11 +555,11 @@ export default function ReceiptsListPage() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="px-2 sm:px-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Types</option>
-              <option value="sending">↑ Sending (Expenses)</option>
-              <option value="receiving">↓ Receiving (Income)</option>
+              <option value="sending">↑ Sending</option>
+              <option value="receiving">↓ Receiving</option>
               <option value="unknown">? Unknown</option>
             </select>
 
@@ -567,7 +567,7 @@ export default function ReceiptsListPage() {
             <select
               value={pageSize}
               onChange={(e) => setPageSize(e.target.value === 'all' ? -1 : parseInt(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 font-medium"
+              className="px-2 sm:px-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 font-medium"
             >
               <option value={20}>20 rows</option>
               <option value={50}>50 rows</option>
@@ -584,7 +584,7 @@ export default function ReceiptsListPage() {
                   setMonthFilter('all');
                   setTypeFilter('all');
                 }}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                className="px-3 sm:px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
               >
                 Clear Filters
               </button>
@@ -595,41 +595,47 @@ export default function ReceiptsListPage() {
           <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
             <button
               onClick={handleOpenIncomeModal}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
             >
-              <Plus size={18} />
-              Add Income
+              <Plus size={16} />
+              <span className="hidden sm:inline">Add Income</span>
+              <span className="sm:hidden">Income</span>
             </button>
             {selectedReceiptIds.size > 0 && (
               <button
                 onClick={handleBulkDelete}
                 disabled={bulkDeleting}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
-                <Trash2 size={18} />
-                Delete Selected ({selectedReceiptIds.size})
+                <Trash2 size={16} />
+                <span className="hidden sm:inline">Delete Selected</span>
+                <span className="sm:hidden">Delete</span>
+                <span className="hidden xs:inline"> ({selectedReceiptIds.size})</span>
               </button>
             )}
             <button
               onClick={() => handleExportAll()}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
             >
-              <FileSpreadsheet size={18} />
-              Export All to Sheets
+              <FileSpreadsheet size={16} />
+              <span className="hidden sm:inline">Export All</span>
+              <span className="sm:hidden">All</span>
             </button>
             <button
               onClick={() => handleExportFiltered()}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
-              <Download size={18} />
-              Export Filtered Results
+              <Download size={16} />
+              <span className="hidden sm:inline">Export Filtered</span>
+              <span className="sm:hidden">Filtered</span>
             </button>
             <button
               onClick={() => handleExportSummary()}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
             >
-              <FileSpreadsheet size={18} />
-              Export Summary
+              <FileSpreadsheet size={16} />
+              <span className="hidden sm:inline">Summary</span>
+              <span className="sm:hidden">Sum</span>
             </button>
           </div>
         </div>
@@ -648,7 +654,7 @@ export default function ReceiptsListPage() {
         ) : (
           <>
             {/* Results count with pagination info */}
-            <div className="mb-4 flex items-center justify-between text-sm text-gray-600">
+            <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm text-gray-600 gap-2">
               <div>
                 Showing <span className="font-semibold text-gray-900">{startIndex + 1}</span>
                 to <span className="font-semibold text-gray-900">{Math.min(endIndex, filteredReceipts.length)}</span>
@@ -659,11 +665,11 @@ export default function ReceiptsListPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-            <table className="w-full">
+            <div className="overflow-x-auto -mx-3 sm:mx-0">
+            <table className="w-full min-w-[800px]">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
                     <input
                       type="checkbox"
                       checked={paginatedReceipts.length > 0 && paginatedReceipts.every(r => selectedReceiptIds.has(r.id))}
@@ -671,25 +677,25 @@ export default function ReceiptsListPage() {
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Sender
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Receiver
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -697,7 +703,7 @@ export default function ReceiptsListPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {paginatedReceipts.map((receipt) => (
                   <tr key={receipt.id} className={`hover:bg-gray-50 ${selectedReceiptIds.has(receipt.id) ? 'bg-blue-50' : ''}`}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <input
                         type="checkbox"
                         checked={selectedReceiptIds.has(receipt.id)}
@@ -705,26 +711,26 @@ export default function ReceiptsListPage() {
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                       {receipt.extracted_date ? (
-                        <div className="flex items-center gap-2">
-                          <Calendar size={16} className="text-gray-400" />
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <Calendar size={14} className="text-gray-400 hidden sm:block" />
                           {format(receipt.extracted_date instanceof Date ? receipt.extracted_date : new Date(receipt.extracted_date), 'MMM dd, yyyy')}
                         </div>
                       ) : (
                         '-'
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 max-w-[100px] sm:max-w-none truncate">
                       {receipt.sender || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 max-w-[100px] sm:max-w-none truncate">
                       {receipt.receiver || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                       {receipt.amount ? (
-                        <div className="flex items-center gap-2">
-                          <DollarSign size={16} className="text-gray-400" />
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <DollarSign size={14} className="text-gray-400 hidden sm:block" />
                           ฿{typeof receipt.amount === 'number'
                             ? receipt.amount.toFixed(2)
                             : parseFloat(receipt.amount).toFixed(2)}
@@ -733,31 +739,32 @@ export default function ReceiptsListPage() {
                         '-'
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <div className="flex flex-col gap-1">
                         {/* Transaction Type Badge */}
                         {receipt.transaction_type === 'receiving' ? (
                           // Income - show category
                           receipt.income_category ? (
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] sm:text-xs font-medium rounded-full ${
                               receipt.is_salary
                                 ? 'bg-emerald-100 text-emerald-800 border-2 border-emerald-200'
                                 : 'bg-green-100 text-green-800'
                             }`}>
                               {receipt.is_salary && '💰 '}
-                              {receipt.income_category}
+                              <span className="hidden xs:inline">{receipt.income_category}</span>
+                              <span className="xs:hidden">{receipt.income_category.slice(0, 8)}...</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-gray-100 text-gray-800">
                               ↓ Income
                             </span>
                           )
                         ) : receipt.transaction_type === 'sending' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-red-100 text-red-800">
                             ↑ Sending
                           </span>
                         ) : receipt.transaction_type === 'unknown' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-gray-100 text-gray-800">
                             ? Unknown
                           </span>
                         ) : (
@@ -766,7 +773,7 @@ export default function ReceiptsListPage() {
 
                         {/* OCR Engine Badge */}
                         {receipt.ocr_engine && (
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full border ${
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-full border ${
                             receipt.ocr_engine === 'gemini'
                               ? 'bg-purple-50 text-purple-700 border-purple-200'
                               : receipt.ocr_engine === 'template+vlm'
@@ -780,33 +787,33 @@ export default function ReceiptsListPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(receipt.status)}`}>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-[10px] sm:text-xs font-medium rounded-full ${getStatusColor(receipt.status)}`}>
                         {receipt.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex items-center gap-2">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm">
+                      <div className="flex items-center gap-1 sm:gap-2">
                         <button
                           onClick={() => setSelectedReceipt(receipt)}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="text-blue-600 hover:text-blue-800 p-1"
                           title="View details"
                         >
-                          <Eye size={18} />
+                          <Eye size={16} />
                         </button>
                         <button
                           onClick={() => handleEditReceipt(receipt)}
-                          className="text-amber-600 hover:text-amber-800"
+                          className="text-amber-600 hover:text-amber-800 p-1"
                           title="Edit receipt"
                         >
-                          <Edit2 size={18} />
+                          <Edit2 size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(receipt.id)}
-                          className="text-red-600 hover:text-red-800"
+                          className="text-red-600 hover:text-red-800 p-1"
                           title="Delete"
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -817,28 +824,29 @@ export default function ReceiptsListPage() {
 
             {/* Pagination Controls */}
             {pageSize !== -1 && totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <div className="text-sm text-gray-600">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-3 sm:px-6 py-3 sm:py-4 bg-gray-50 border-t border-gray-200 gap-3">
+                <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
                   Page <span className="font-semibold">{currentPage}</span> of <span className="font-semibold">{totalPages}</span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-1 sm:gap-2">
                   {/* Previous Button */}
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-2 sm:px-3 py-1 text-xs sm:text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Previous
+                    <span className="hidden sm:inline">Previous</span>
+                    <span className="sm:hidden">←</span>
                   </button>
 
-                  {/* Page Numbers */}
+                  {/* Page Numbers - show fewer on mobile */}
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    {Array.from({ length: Math.min(window?.innerWidth < 640 ? 3 : 5, totalPages) }, (_, i) => {
                       let pageNum;
 
                       // Show pages around current page
-                      if (totalPages <= 5) {
+                      if (totalPages <= (window?.innerWidth < 640 ? 3 : 5)) {
                         pageNum = i + 1;
                       } else if (currentPage <= 3) {
                         pageNum = i + 1;
@@ -852,7 +860,7 @@ export default function ReceiptsListPage() {
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`px-3 py-1 text-sm border rounded-md ${
+                          className={`px-2 sm:px-3 py-1 text-xs sm:text-sm border rounded-md ${
                             currentPage === pageNum
                               ? 'bg-blue-600 text-white border-blue-600'
                               : 'border-gray-300 hover:bg-gray-100'
@@ -868,9 +876,10 @@ export default function ReceiptsListPage() {
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-2 sm:px-3 py-1 text-xs sm:text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    <span className="hidden sm:inline">Next</span>
+                    <span className="sm:hidden">→</span>
                   </button>
                 </div>
               </div>
@@ -882,23 +891,23 @@ export default function ReceiptsListPage() {
 
       {/* Receipt Detail Modal */}
       {selectedReceipt && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">Receipt Details</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Receipt Details</h2>
                 <button
                   onClick={() => setSelectedReceipt(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 p-1 text-2xl"
                 >
                   ×
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {/* Image */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Original Image</h3>
+                  <h3 className="text-base sm:text-lg font-semibold mb-2">Original Image</h3>
                   <img
                     src={`${API_URL}${selectedReceipt.image_path}`}
                     alt={selectedReceipt.filename}
@@ -912,33 +921,33 @@ export default function ReceiptsListPage() {
 
                 {/* Details */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Extracted Information</h3>
-                  <dl className="space-y-3">
+                  <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Extracted Information</h3>
+                  <dl className="space-y-2 sm:space-y-3">
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Filename</dt>
-                      <dd className="text-sm text-gray-900">{selectedReceipt.filename}</dd>
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500">Filename</dt>
+                      <dd className="text-xs sm:text-sm text-gray-900 break-all">{selectedReceipt.filename}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Date</dt>
-                      <dd className="text-sm text-gray-900">
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500">Date</dt>
+                      <dd className="text-xs sm:text-sm text-gray-900">
                         {selectedReceipt.extracted_date ? format(selectedReceipt.extracted_date instanceof Date ? selectedReceipt.extracted_date : new Date(selectedReceipt.extracted_date), 'MMM dd, yyyy') : '-'}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Time</dt>
-                      <dd className="text-sm text-gray-900">{selectedReceipt.extracted_time || '-'}</dd>
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500">Time</dt>
+                      <dd className="text-xs sm:text-sm text-gray-900">{selectedReceipt.extracted_time || '-'}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Sender</dt>
-                      <dd className="text-sm text-gray-900">{selectedReceipt.sender || '-'}</dd>
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500">Sender</dt>
+                      <dd className="text-xs sm:text-sm text-gray-900">{selectedReceipt.sender || '-'}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Receiver</dt>
-                      <dd className="text-sm text-gray-900">{selectedReceipt.receiver || '-'}</dd>
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500">Receiver</dt>
+                      <dd className="text-xs sm:text-sm text-gray-900">{selectedReceipt.receiver || '-'}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Amount</dt>
-                      <dd className="text-sm text-gray-900">
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500">Amount</dt>
+                      <dd className="text-xs sm:text-sm text-gray-900">
                         {selectedReceipt.amount ? `฿${
                           typeof selectedReceipt.amount === 'number'
                             ? selectedReceipt.amount.toFixed(2)
@@ -947,12 +956,12 @@ export default function ReceiptsListPage() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Note</dt>
-                      <dd className="text-sm text-gray-900">{selectedReceipt.note || '-'}</dd>
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500">Note</dt>
+                      <dd className="text-xs sm:text-sm text-gray-900 break-words">{selectedReceipt.note || '-'}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Confidence</dt>
-                      <dd className="text-sm text-gray-900">
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500">Confidence</dt>
+                      <dd className="text-xs sm:text-sm text-gray-900">
                         {selectedReceipt.confidence_score
                           ? `${Math.round(
                               typeof selectedReceipt.confidence_score === 'number'
@@ -963,8 +972,8 @@ export default function ReceiptsListPage() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Status</dt>
-                      <dd className="text-sm">
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500">Status</dt>
+                      <dd className="text-xs sm:text-sm">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedReceipt.status)}`}>
                           {selectedReceipt.status}
                         </span>
@@ -976,9 +985,9 @@ export default function ReceiptsListPage() {
 
               {/* OCR Raw Text */}
               {selectedReceipt.ocr_raw_text && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-semibold mb-2">Raw OCR Text</h3>
-                  <pre className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 overflow-x-auto">
+                <div className="mt-4 sm:mt-6">
+                  <h3 className="text-base sm:text-lg font-semibold mb-2">Raw OCR Text</h3>
+                  <pre className="bg-gray-50 p-3 sm:p-4 rounded-lg text-xs sm:text-sm text-gray-700 overflow-x-auto break-all">
                     {selectedReceipt.ocr_raw_text}
                   </pre>
                 </div>
@@ -990,10 +999,10 @@ export default function ReceiptsListPage() {
 
       {/* Income Modal */}
       {showIncomeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[95vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                 {editingIncome ? 'Edit Income' : 'Add Income Entry'}
               </h2>
               <button
@@ -1004,7 +1013,7 @@ export default function ReceiptsListPage() {
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Amount (THB) <span className="text-red-500">*</span>
@@ -1013,7 +1022,7 @@ export default function ReceiptsListPage() {
                   type="number"
                   value={incomeForm.amount || ''}
                   onChange={(e) => setIncomeForm({...incomeForm, amount: parseFloat(e.target.value) || 0})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   placeholder="3000"
                 />
               </div>
@@ -1025,7 +1034,7 @@ export default function ReceiptsListPage() {
                 <select
                   value={incomeForm.category}
                   onChange={(e) => setIncomeForm({...incomeForm, category: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 >
                   {incomeCategories.length > 0 ? (
                     incomeCategories.map((cat) => (
@@ -1037,7 +1046,7 @@ export default function ReceiptsListPage() {
                     <option value="Other Income">Other Income</option>
                   )}
                 </select>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-xs sm:text-sm text-gray-500">
                   Select the type of income
                 </p>
               </div>
@@ -1050,7 +1059,7 @@ export default function ReceiptsListPage() {
                   type="date"
                   value={incomeForm.income_date}
                   onChange={(e) => setIncomeForm({...incomeForm, income_date: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -1062,22 +1071,22 @@ export default function ReceiptsListPage() {
                   type="text"
                   value={incomeForm.note}
                   onChange={(e) => setIncomeForm({...incomeForm, note: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Additional work, side project, etc."
                 />
               </div>
             </div>
 
-            <div className="flex gap-3 p-6 border-t border-gray-200">
+            <div className="flex gap-2 sm:gap-3 p-4 sm:p-6 border-t border-gray-200">
               <button
                 onClick={handleSaveIncome}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
                 {editingIncome ? 'Update' : 'Add'} Income
               </button>
               <button
                 onClick={handleCloseIncomeModal}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
               >
                 Cancel
               </button>
@@ -1088,10 +1097,10 @@ export default function ReceiptsListPage() {
 
       {/* Edit Receipt Modal */}
       {showEditModal && editingReceipt && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white">
-              <h2 className="text-xl font-semibold text-gray-900">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[95vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
+              <h2 className="text-base sm:text-xl font-semibold text-gray-900">
                 Edit Receipt {editingReceipt.is_salary ? '(Salary)' : ''} {editingReceipt.is_manual_income ? '(Manual Income)' : ''}
               </h2>
               <button
@@ -1102,7 +1111,7 @@ export default function ReceiptsListPage() {
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4">
               {/* Amount */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1113,13 +1122,13 @@ export default function ReceiptsListPage() {
                   step="0.01"
                   value={editForm.amount}
                   onChange={(e) => setEditForm({...editForm, amount: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   placeholder="1000.00"
                 />
               </div>
 
               {/* Date and Time */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Date <span className="text-red-500">*</span>
@@ -1128,7 +1137,7 @@ export default function ReceiptsListPage() {
                     type="date"
                     value={editForm.extracted_date}
                     onChange={(e) => setEditForm({...editForm, extracted_date: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 <div>
@@ -1139,13 +1148,13 @@ export default function ReceiptsListPage() {
                     type="time"
                     value={editForm.extracted_time}
                     onChange={(e) => setEditForm({...editForm, extracted_time: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
 
               {/* Sender and Receiver */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Sender
@@ -1154,7 +1163,7 @@ export default function ReceiptsListPage() {
                     type="text"
                     value={editForm.sender}
                     onChange={(e) => setEditForm({...editForm, sender: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Sender name"
                   />
                 </div>
@@ -1166,7 +1175,7 @@ export default function ReceiptsListPage() {
                     type="text"
                     value={editForm.receiver}
                     onChange={(e) => setEditForm({...editForm, receiver: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Receiver name"
                   />
                 </div>
@@ -1217,23 +1226,23 @@ export default function ReceiptsListPage() {
                 <textarea
                   value={editForm.note}
                   onChange={(e) => setEditForm({...editForm, note: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   rows={3}
                   placeholder="Add any notes..."
                 />
               </div>
             </div>
 
-            <div className="flex gap-3 p-6 border-t border-gray-200">
+            <div className="flex gap-2 sm:gap-3 p-4 sm:p-6 border-t border-gray-200">
               <button
                 onClick={handleSaveReceiptEdit}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
                 Save Changes
               </button>
               <button
                 onClick={handleCloseEditModal}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
               >
                 Cancel
               </button>
@@ -1244,45 +1253,45 @@ export default function ReceiptsListPage() {
 
       {/* Export Success Modal */}
       {exportResult && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">✅ Export Successful!</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h2 className="text-lg sm:text-2xl font-bold text-gray-900">✅ Export Successful!</h2>
               <button
                 onClick={() => setExportResult(null)}
-                className="text-gray-400 hover:text-gray-600 text-3xl"
+                className="text-gray-400 hover:text-gray-600 text-2xl"
               >
                 ×
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-xs sm:text-sm text-gray-600 mb-2">
                   {exportResult.rows_exported
                     ? `Exported ${exportResult.rows_exported} receipts`
                     : 'Exported summary'}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Worksheet: <span className="font-mono font-semibold">{exportResult.worksheet}</span>
                 </p>
               </div>
 
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-sm font-medium text-green-900 mb-3">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
+                <p className="text-xs sm:text-sm font-medium text-green-900 mb-2 sm:mb-3">
                   📊 Open your Google Sheets spreadsheet:
                 </p>
                 <a
                   href={exportResult.spreadsheet_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full text-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  className="block w-full text-center px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
                 >
                   Open Spreadsheet
                 </a>
               </div>
 
-              <div className="text-xs text-gray-500">
+              <div className="text-[10px] sm:text-xs text-gray-500">
                 <p className="mb-1">💡 Tip: Right-click the button and select "Copy link address" if you want to share it.</p>
               </div>
             </div>

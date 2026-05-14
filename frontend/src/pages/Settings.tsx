@@ -139,21 +139,21 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Settings</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Settings</h1>
 
       <div className="max-w-2xl">
         {/* User Name Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <User className="text-blue-600" size={24} />
-            <h2 className="text-xl font-semibold text-gray-900">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <User className="text-blue-600" size={20} />
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
               Your Information
             </h2>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                 Your Full Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -161,15 +161,15 @@ export default function SettingsPage() {
                 value={settings.user_name}
                 onChange={(e) => setSettings({...settings, user_name: e.target.value})}
                 placeholder="ชาโลม อินซ้อย"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">
                 Used to classify transactions as sending (paying) or receiving (income)
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                 Name Variations (Optional)
               </label>
               <input
@@ -177,9 +177,9 @@ export default function SettingsPage() {
                 value={variationsInput}
                 onChange={(e) => setVariationsInput(e.target.value)}
                 placeholder="ชาโลม, โลม, ก้อย"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">
                 Comma-separated nicknames or variations. Helps with OCR errors.
               </p>
             </div>
@@ -192,7 +192,7 @@ export default function SettingsPage() {
                 onChange={(e) => setSettings({...settings, auto_classify: e.target.checked})}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500"
               />
-              <label htmlFor="auto_classify" className="text-sm font-medium text-gray-700">
+              <label htmlFor="auto_classify" className="text-xs sm:text-sm font-medium text-gray-700">
                 Automatically classify new receipts
               </label>
             </div>
@@ -200,34 +200,34 @@ export default function SettingsPage() {
         </div>
 
         {/* OCR Corrections Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Settings className="text-purple-600" size={24} />
-              <h2 className="text-xl font-semibold text-gray-900">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Settings className="text-purple-600" size={20} />
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                 OCR Corrections
               </h2>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <span className="text-xs sm:text-sm text-gray-500">
                 {ocrCorrections.count} corrections
               </span>
               <button
                 onClick={handleReloadCorrections}
-                className="p-1.5 text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                className="p-1 sm:p-1.5 text-purple-600 hover:bg-purple-50 rounded transition-colors"
                 title="Reload corrections from file"
               >
-                <RefreshCw size={16} />
+                <RefreshCw size={14} />
               </button>
             </div>
           </div>
 
           {/* Add new correction */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-md">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Add New Correction</h3>
-            <div className="flex gap-3 items-end">
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-md">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Add New Correction</h3>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-end">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-[10px] sm:text-xs font-medium text-gray-600 mb-1">
                   Wrong Text (from OCR)
                 </label>
                 <input
@@ -235,14 +235,14 @@ export default function SettingsPage() {
                   value={newWrongText}
                   onChange={(e) => setNewWrongText(e.target.value)}
                   placeholder="เน.ย."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 text-sm"
+                  className="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
-              <div className="flex items-center text-gray-400 pb-2">
+              <div className="flex items-center justify-center text-gray-400 pb-0 sm:pb-2 sm:px-2">
                 →
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-[10px] sm:text-xs font-medium text-gray-600 mb-1">
                   Correct Text
                 </label>
                 <input
@@ -250,19 +250,19 @@ export default function SettingsPage() {
                   value={newCorrectText}
                   onChange={(e) => setNewCorrectText(e.target.value)}
                   placeholder="ม.ค."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 text-sm"
+                  className="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
               <button
                 onClick={handleAddCorrection}
                 disabled={!newWrongText.trim() || !newCorrectText.trim()}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 transition-colors"
+                className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 transition-colors"
               >
-                <Plus size={16} />
-                Add
+                <Plus size={14} />
+                <span>Add</span>
               </button>
             </div>
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-[10px] sm:text-xs text-gray-500">
               Map common OCR errors to correct text. Applied automatically before parsing.
               If you edit the JSON file directly, click the reload button to apply changes.
             </p>
@@ -270,51 +270,51 @@ export default function SettingsPage() {
 
           {/* Existing corrections list */}
           {ocrCorrections.count > 0 ? (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
+            <div className="space-y-2 max-h-48 sm:max-h-64 overflow-y-auto">
               {Object.entries(ocrCorrections.corrections).map(([wrong, correct]) => (
                 <div
                   key={wrong}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
                 >
-                  <div className="flex items-center gap-3 flex-1">
-                    <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-mono">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-[10px] sm:text-xs font-mono truncate">
                       {wrong}
                     </span>
-                    <span className="text-gray-400">→</span>
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-mono">
+                    <span className="text-gray-400 flex-shrink-0">→</span>
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-[10px] sm:text-xs font-mono truncate">
                       {correct}
                     </span>
                   </div>
                   <button
                     onClick={() => handleDeleteCorrection(wrong)}
-                    className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                    className="p-1 sm:p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors flex-shrink-0"
                     title="Delete correction"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500 text-sm">
+            <div className="text-center py-6 sm:py-8 text-gray-500 text-xs sm:text-sm">
               No OCR corrections yet. Add one above to fix common OCR errors.
             </div>
           )}
         </div>
 
         {/* Info Card */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="flex items-start gap-3">
-            <Info className="text-blue-600 mt-0.5" size={18} />
-            <div className="text-sm text-blue-800">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <Info className="text-blue-600 mt-0.5 flex-shrink-0" size={16} />
+            <div className="text-xs sm:text-sm text-blue-800">
               <strong>How it works:</strong>
               <ul className="mt-2 list-disc list-inside space-y-1">
                 <li>Enter your name once in settings</li>
                 <li>Upload receipts as usual</li>
                 <li>System automatically classifies as:
-                  <span className="ml-2 inline-flex items-center gap-1">
-                    <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded text-xs">↑ Sending</span>
-                    <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs">↓ Receiving</span>
+                  <span className="ml-1 sm:ml-2 inline-flex items-center gap-1">
+                    <span className="px-1.5 sm:px-2 py-0.5 bg-red-100 text-red-800 rounded text-[10px] sm:text-xs">↑ Sending</span>
+                    <span className="px-1.5 sm:px-2 py-0.5 bg-green-100 text-green-800 rounded text-[10px] sm:text-xs">↓ Receiving</span>
                   </span>
                 </li>
                 <li>You can correct wrong classifications in Review page</li>
@@ -324,18 +324,18 @@ export default function SettingsPage() {
         </div>
 
         {/* Save Button */}
-        <div className="flex justify-end items-center gap-3">
+        <div className="flex flex-col sm:flex-row justify-end items-center gap-2 sm:gap-3">
           {saveSuccess && (
-            <span className="text-green-600 text-sm font-medium">
+            <span className="text-green-600 text-xs sm:text-sm font-medium">
               ✓ Settings saved successfully!
             </span>
           )}
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+            className="flex items-center gap-1 sm:gap-2 px-4 sm:px-6 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors w-full sm:w-auto"
           >
-            <Save size={18} />
+            <Save size={16} />
             {saving ? 'Saving...' : 'Save Settings'}
           </button>
         </div>

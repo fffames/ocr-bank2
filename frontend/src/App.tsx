@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
-import { Upload, FileText, MessageSquare, BarChart3, Home, Code2, User, Grid3x3, Settings as SettingsIcon, LogOut, Shield } from 'lucide-react';
+import { Upload, FileText, MessageSquare, BarChart3, Home, Code2, User, Grid3x3, Settings as SettingsIcon, LogOut, Shield, Menu, X } from 'lucide-react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
@@ -38,16 +38,27 @@ function App() {
 function UserModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'developer') => void }) {
   const navigate = useNavigate();
   const currentUser = getUser();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logoutUser();
     navigate('/login');
   };
 
+  const navLinks = [
+    { to: '/dashboard', icon: <Home size={20} />, label: 'Dashboard' },
+    { to: '/upload', icon: <Upload size={20} />, label: 'Upload' },
+    { to: '/receipts', icon: <FileText size={20} />, label: 'Receipts' },
+    { to: '/settings', icon: <SettingsIcon size={20} />, label: 'Settings' },
+    { to: '/chat', icon: <MessageSquare size={20} />, label: 'Chat' },
+    { to: '/analytics', icon: <BarChart3 size={20} />, label: 'Analytics' },
+    ...(currentUser?.is_admin ? [{ to: '/admin', icon: <Shield size={20} />, label: 'Admin' }] : []),
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation Bar */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -57,39 +68,22 @@ function UserModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'develope
               </Link>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <NavLink to="/dashboard" icon={<Home size={20} />}>
-                Dashboard
-              </NavLink>
-              <NavLink to="/upload" icon={<Upload size={20} />}>
-                Upload
-              </NavLink>
-              <NavLink to="/receipts" icon={<FileText size={20} />}>
-                Receipts
-              </NavLink>
-              <NavLink to="/settings" icon={<SettingsIcon size={20} />}>
-                Settings
-              </NavLink>
-              <NavLink to="/chat" icon={<MessageSquare size={20} />}>
-                Chat
-              </NavLink>
-              <NavLink to="/analytics" icon={<BarChart3 size={20} />}>
-                Analytics
-              </NavLink>
-              {currentUser?.is_admin && (
-                <NavLink to="/admin" icon={<Shield size={20} />}>
-                  Admin
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
+              {navLinks.map((link) => (
+                <NavLink key={link.to} to={link.to} icon={link.icon}>
+                  {link.label}
                 </NavLink>
-              )}
+              ))}
               <button
                 onClick={() => onModeChange('developer')}
                 className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
               >
                 <Code2 size={20} />
-                <span>Developer Mode</span>
+                <span className="hidden lg:inline">Developer Mode</span>
               </button>
               <div className="flex items-center space-x-2 border-l border-gray-300 pl-4">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 hidden sm:inline">
                   {currentUser?.name || currentUser?.email?.split('@')[0]}
                 </span>
                 <button
@@ -101,12 +95,66 @@ function UserModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'develope
                 </button>
               </div>
             </div>
+
+            {/* Mobile menu button */}
+            <div className="flex items-center md:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+              >
+                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100"
+                >
+                  {link.icon}
+                  <span>{link.label}</span>
+                </Link>
+              ))}
+              <button
+                onClick={() => {
+                  onModeChange('developer');
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center space-x-3 w-full px-3 py-2 rounded-md text-base font-medium bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                <Code2 size={20} />
+                <span>Developer Mode</span>
+              </button>
+              <div className="border-t border-gray-200 pt-2 mt-2">
+                <div className="px-3 py-2 text-sm text-gray-600">
+                  {currentUser?.name || currentUser?.email?.split('@')[0]}
+                </div>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center space-x-3 w-full px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  <LogOut size={20} />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Main Content */}
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
@@ -204,6 +252,7 @@ function UserModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'develope
 function DeveloperModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'developer') => void }) {
   const navigate = useNavigate();
   const currentUser = getUser();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logoutUser();
@@ -213,7 +262,7 @@ function DeveloperModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'dev
   return (
     <div className="min-h-screen">
       {/* Developer Navigation */}
-      <nav className="border-b border-[var(--dev-border)] bg-[var(--dev-bg-secondary)]/90 backdrop-blur-sm">
+      <nav className="border-b border-[var(--dev-border)] bg-[var(--dev-bg-secondary)]/90 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-6">
@@ -223,35 +272,93 @@ function DeveloperModeApp({ onModeChange }: { onModeChange: (mode: 'user' | 'dev
                 </div>
                 <span className="text-xl font-bold text-[var(--dev-text-primary)]">OCR Developer</span>
               </Link>
-              <DevNavLink to="/developer/templates" icon={<Grid3x3 size={18} />}>
-                Templates
-              </DevNavLink>
-              <DevNavLink to="/developer/template-builder" icon={<Code2 size={18} />}>
-                Builder
-              </DevNavLink>
+              <div className="hidden md:flex items-center space-x-6">
+                <DevNavLink to="/developer/templates" icon={<Grid3x3 size={18} />}>
+                  Templates
+                </DevNavLink>
+                <DevNavLink to="/developer/template-builder" icon={<Code2 size={18} />}>
+                  Builder
+                </DevNavLink>
+              </div>
             </div>
 
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-[var(--dev-text-secondary)]">
+              <span className="text-sm text-[var(--dev-text-secondary)] hidden sm:inline">
                 {currentUser?.name || currentUser?.email?.split('@')[0]}
               </span>
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-1 px-2 py-1 rounded text-sm text-[var(--dev-text-secondary)] hover:bg-[var(--dev-bg-tertiary)] transition-colors"
+                className="hidden sm:flex items-center space-x-1 px-2 py-1 rounded text-sm text-[var(--dev-text-secondary)] hover:bg-[var(--dev-bg-tertiary)] transition-colors"
                 title="Logout"
               >
                 <LogOut size={16} />
               </button>
               <button
                 onClick={() => onModeChange('user')}
-                className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium bg-[var(--dev-bg-tertiary)] text-[var(--dev-text-primary)] border border-[var(--dev-border)] hover:border-[var(--dev-accent)] transition-colors"
+                className="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium bg-[var(--dev-bg-tertiary)] text-[var(--dev-text-primary)] border border-[var(--dev-border)] hover:border-[var(--dev-accent)] transition-colors"
               >
                 <User size={18} />
                 <span>User Mode</span>
               </button>
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 rounded-md text-[var(--dev-text-secondary)] hover:bg-[var(--dev-bg-tertiary)] focus:outline-none"
+              >
+                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-[var(--dev-border)] bg-[var(--dev-bg-secondary)]">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              <Link
+                to="/developer/templates"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-[var(--dev-text-secondary)] hover:text-[var(--dev-text-primary)] hover:bg-[var(--dev-bg-tertiary)]"
+              >
+                <Grid3x3 size={20} />
+                <span>Templates</span>
+              </Link>
+              <Link
+                to="/developer/template-builder"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-[var(--dev-text-secondary)] hover:text-[var(--dev-text-primary)] hover:bg-[var(--dev-bg-tertiary)]"
+              >
+                <Code2 size={20} />
+                <span>Builder</span>
+              </Link>
+              <div className="border-t border-[var(--dev-border)] pt-2 mt-2">
+                <div className="px-3 py-2 text-sm text-[var(--dev-text-secondary)]">
+                  {currentUser?.name || currentUser?.email?.split('@')[0]}
+                </div>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center space-x-3 w-full px-3 py-2 rounded-md text-base font-medium text-[var(--dev-text-secondary)] hover:bg-[var(--dev-bg-tertiary)]"
+                >
+                  <LogOut size={20} />
+                  <span>Logout</span>
+                </button>
+                <button
+                  onClick={() => {
+                    onModeChange('user');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center space-x-3 w-full px-3 py-2 mt-1 rounded-md text-base font-medium bg-[var(--dev-bg-tertiary)] text-[var(--dev-text-primary)] border border-[var(--dev-border)]"
+                >
+                  <User size={20} />
+                  <span>User Mode</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Main Content */}
@@ -348,38 +455,38 @@ function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Dashboard</h1>
 
       {/* Main Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Receipts</h3>
-          <p className="text-3xl font-bold text-blue-600">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">Total Receipts</h3>
+          <p className="text-2xl sm:text-3xl font-bold text-blue-600">
             {loading ? '...' : stats.total_receipts}
           </p>
         </div>
 
         {/* Net Amount (can be positive or negative) */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Net Balance</h3>
-          <p className={`text-3xl font-bold ${stats.total_amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">Net Balance</h3>
+          <p className={`text-2xl sm:text-3xl font-bold ${stats.total_amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {loading ? '...' : `${stats.total_amount >= 0 ? '+' : ''}฿${stats.total_amount.toFixed(2)}`}
           </p>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Pending Review</h3>
-          <p className="text-3xl font-bold text-yellow-600">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">Pending Review</h3>
+          <p className="text-2xl sm:text-3xl font-bold text-yellow-600">
             {loading ? '...' : stats.pending_count}
           </p>
         </div>
       </div>
 
       {/* Income vs Expenses */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Received (Income)</h3>
-          <p className="text-2xl font-bold text-green-600">
+      <div className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">Total Received (Income)</h3>
+          <p className="text-xl sm:text-2xl font-bold text-green-600">
             {loading ? '...' : `+฿${stats.receiving_amount.toFixed(2)}`}
           </p>
           <p className="text-sm text-gray-500 mt-1">
@@ -387,9 +494,9 @@ function Dashboard() {
           </p>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Sent (Expenses)</h3>
-          <p className="text-2xl font-bold text-red-600">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">Total Sent (Expenses)</h3>
+          <p className="text-xl sm:text-2xl font-bold text-red-600">
             {loading ? '...' : `-฿${stats.sending_amount.toFixed(2)}`}
           </p>
           <p className="text-sm text-gray-500 mt-1">
@@ -399,16 +506,16 @@ function Dashboard() {
       </div>
 
       {/* Status Counts */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Reviewed</h3>
-          <p className="text-2xl font-bold text-blue-600">
+      <div className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">Reviewed</h3>
+          <p className="text-xl sm:text-2xl font-bold text-blue-600">
             {loading ? '...' : stats.reviewed_count}
           </p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Confirmed</h3>
-          <p className="text-2xl font-bold text-green-600">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">Confirmed</h3>
+          <p className="text-xl sm:text-2xl font-bold text-green-600">
             {loading ? '...' : stats.confirmed_count}
           </p>
         </div>

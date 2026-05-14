@@ -21,8 +21,30 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  /* Prevent text size adjustment on iOS */
+  -webkit-text-size-adjust: 100%;
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
 }
 
 #root {
   min-height: 100vh;
+}
+
+/* Mobile-friendly touch targets */
+button, a {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Remove min-height from small buttons/links */
+button[class*="px-"], a[class*="px-"] {
+  min-height: auto;
+}
+
+/* Better mobile table scrolling */
+@media (max-width: 768px) {
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
 }
