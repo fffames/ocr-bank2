@@ -124,6 +124,11 @@ def update_receipt(
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
 
+    # Check if status is changing to confirmed - delete image if so
+    deleting_image = False
+    if receipt_update.status == "confirmed" and receipt.status != "confirmed":
+        deleting_image = True
+
     # Update fields if provided
     if receipt_update.extracted_date is not None:
         receipt.extracted_date = receipt_update.extracted_date
@@ -146,6 +151,19 @@ def update_receipt(
     db.commit()
     db.refresh(receipt)
 
+    # Delete image after confirmation (data is already in database)
+    if deleting_image and receipt.image_path:
+        import os
+        try:
+            if os.path.exists(receipt.image_path):
+                os.remove(receipt.image_path)
+                print(f"✅ Deleted image for confirmed receipt {receipt_id}: {receipt.image_path}")
+            # Clear the image_path in database
+            receipt.image_path = None
+            db.commit()
+        except Exception as e:
+            print(f"⚠️  Could not delete image for receipt {receipt_id}: {e}")
+
     return receipt
 
 
@@ -157,6 +175,7 @@ def confirm_receipt(
 ):
     """
     Mark receipt as confirmed (verified by user).
+    Image will be deleted after confirmation since OCR data is saved.
 
     Args:
         receipt_id: ID of the receipt to confirm
@@ -177,6 +196,19 @@ def confirm_receipt(
     receipt.status = "confirmed"
     db.commit()
     db.refresh(receipt)
+
+    # Delete image after confirmation (data is already in database)
+    import os
+    if receipt.image_path:
+        try:
+            if os.path.exists(receipt.image_path):
+                os.remove(receipt.image_path)
+                print(f"✅ Deleted image for confirmed receipt {receipt_id}: {receipt.image_path}")
+            # Clear the image_path in database
+            receipt.image_path = None
+            db.commit()
+        except Exception as e:
+            print(f"⚠️  Could not delete image for receipt {receipt_id}: {e}")
 
     return receipt
 
@@ -218,8 +250,9 @@ def delete_receipt(
     # Delete image file
     import os
     try:
-        if os.path.exists(receipt.image_path):
+        if receipt.image_path and os.path.exists(receipt.image_path):
             os.remove(receipt.image_path)
+            print(f"✅ Deleted image for receipt {receipt_id}")
     except Exception as e:
         print(f"Warning: Could not delete image file: {e}")
 

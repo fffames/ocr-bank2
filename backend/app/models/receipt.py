@@ -10,7 +10,7 @@ class Receipt(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)  # NEW: User ownership
     filename = Column(String(255), nullable=False)
-    image_path = Column(Text, nullable=False)
+    image_path = Column(Text, nullable=True)  # Nullable: image deleted after confirmation
     ocr_raw_text = Column(Text)
     extracted_date = Column(Date)
     extracted_time = Column(Time)

@@ -98,7 +98,7 @@ async def health_check():
 # Import routers with better error handling
 print("📦 Loading API routers...")
 try:
-    from app.api import auth, admin, upload, receipts, chat, templates, user_settings, export, income, income_categories, salary, ocr_corrections
+    from app.api import auth, admin, upload, receipts, chat, templates, user_settings, export, income, income_categories, salary, ocr_corrections, cleanup
 
     app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
     print("  ✅ Authentication router loaded")
@@ -117,6 +117,7 @@ try:
     app.include_router(income_categories.router, prefix="/api/income-categories", tags=["income_categories"])
     app.include_router(salary.router, prefix="/api/salary", tags=["salary"])
     app.include_router(ocr_corrections.router, prefix="/api", tags=["ocr_corrections"])
+    app.include_router(cleanup.router, prefix="/api/cleanup", tags=["cleanup"])
     print("  ✅ All database routers loaded")
 
     print("✅ All routers loaded successfully")
