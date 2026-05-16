@@ -2,54 +2,50 @@
 
 A full-stack web application for mobile bank receipt processing with OCR, review interface, database storage, Google Sheets export, and RAG-powered chatbot.
 
-## 🚀 Quick Deploy
-
-**Deploy to production for FREE in 30 minutes!**
-
-See [QUICK_DEPLOY.md](QUICK_DEPLOY.md) for step-by-step deployment instructions.
-
-**TL;DR:**
-1. Create accounts: Railway, Vercel, Supabase
-2. Deploy database to Supabase
-3. Deploy backend to Railway
-4. Deploy frontend to Vercel
-5. Test your deployed app
-
-**Cost:** $0/month (using free tiers)
-
----
-
 ## Features
 
-- **OCR Processing**: Extract text from Thai bank receipts using PaddleOCR
-- **Review Interface**: View and edit OCR results before saving
-- **Batch Upload**: Process multiple receipts at once
-- **Database Storage**: Store receipts in PostgreSQL
-- **Google Sheets Export**: Export receipt data to Google Sheets
-- **RAG Chatbot**: Query receipt data using AI with semantic search
-- **Analytics Dashboard**: Visualize spending patterns and insights
+### Core Features
+- **OCR Processing**: Extract text from Thai bank receipts using Tesseract OCR
+- **Template-Based OCR**: Customizable zone-based OCR templates for different receipt formats
+- **Review Interface**: View and edit OCR results with zone overlay visualization
+- **Batch Upload**: Process multiple receipts at once with drag-and-drop
+- **Transaction Classification**: Auto-classify transactions as income/expense
+- **Database Storage**: Store receipts in PostgreSQL with full CRUD operations
+
+### Advanced Features
+- **RAG Chatbot**: Query receipt data using AI with semantic search (ChromaDB + Gemini)
+- **Analytics Dashboard**: Visualize spending patterns and insights with interactive charts
+- **Export Options**: Export to Google Sheets or Excel files
+- **User Authentication**: JWT-based auth with login/register
+- **Admin Panel**: User management and system oversight
+- **Income Tracking**: Track and categorize income sources
+- **Salary Management**: Manage salary records
+- **Auto-Cleanup**: Automatically delete receipt images after confirmation
 
 ## Tech Stack
 
 ### Frontend
 - React 18 + TypeScript
 - Vite (build tool)
-- React Router (routing)
-- Axios (HTTP client)
+- React Router v6 (routing)
+- Axios + React Query (data fetching)
 - Tailwind CSS (styling)
 - Recharts (data visualization)
-- React Hook Form (forms)
-- Zod (validation)
+- React Hook Form + Zod (forms & validation)
+- Lucide React (icons)
+- React Dropzone (file uploads)
 
 ### Backend
 - Python 3.10+ / FastAPI
 - PostgreSQL (database)
 - SQLAlchemy (ORM)
 - Alembic (migrations)
-- PaddleOCR (Thai language OCR)
+- Tesseract OCR (OCR engine)
 - ChromaDB (vector store for RAG)
 - Google Generative AI SDK (Gemini)
-- Google Sheets API (export)
+- Groq (alternative LLM provider)
+- Openpyxl (Excel export)
+- JWT + Passlib (authentication)
 
 ## Quick Start
 
@@ -58,7 +54,8 @@ See [QUICK_DEPLOY.md](QUICK_DEPLOY.md) for step-by-step deployment instructions.
 - Python 3.10 or higher
 - Node.js 18 or higher
 - Docker and Docker Compose
-- Google Cloud account (for Gemini API and Google Sheets)
+- Google Cloud account (for Gemini API)
+- Groq account (for alternative LLM)
 
 ### 1. Clone the Repository
 
@@ -81,14 +78,15 @@ pip install -r requirements.txt
 # Configure environment
 cp .env.example .env
 # Edit .env with your API keys and configuration
-# IMPORTANT: Never commit .env to git (it's in .gitignore)
-# See .env.example for all available variables
 
 # Start PostgreSQL
 docker compose up -d
 
 # Run database migrations
 alembic upgrade head
+
+# Create admin user (optional)
+python change_admin.py
 
 # Start the server
 uvicorn app.main:app --reload
@@ -134,19 +132,27 @@ OCR_DEVICE=cpu   # or gpu if available
 GEMINI_API_KEY=your_gemini_api_key
 LLM_PROVIDER=gemini
 
-# LLM (Local: LM Studio)
-LOCAL_LLM_URL=http://localhost:1234/v1
+# LLM (Alternative: Groq)
+GROQ_API_KEY=your_groq_api_key
 
 # Vector Store
 CHROMADB_PERSIST_DIRECTORY=./data/chromadb
 
-# Google Sheets
+# Google Sheets (optional)
 GOOGLE_SHEETS_CREDENTIALS_PATH=./config/credentials.json
 GOOGLE_SHEETS_SPREADSHEET_ID=your_spreadsheet_id
 
 # File Storage
 IMAGE_STORAGE_PATH=./images
 MAX_UPLOAD_SIZE=10485760  # 10MB
+
+# Authentication
+SECRET_KEY=your_secret_key_here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Auto-cleanup
+AUTO_DELETE_IMAGES=true  # Delete images after confirmation
 ```
 
 ### Frontend Environment Variables (.env)
@@ -164,17 +170,34 @@ ocr-bank2/
 │   │   ├── main.py                 # FastAPI application
 │   │   ├── config.py               # Configuration
 │   │   ├── api/                    # API routes
-│   │   │   ├── upload.py           # Upload endpoints
+│   │   │   ├── auth.py             # Authentication endpoints
+│   │   │   ├── upload.py           # Upload & OCR endpoints
 │   │   │   ├── receipts.py         # Receipt CRUD
-│   │   │   ├── chat.py             # RAG chat (coming soon)
-│   │   │   ├── export.py           # Export (coming soon)
-│   │   │   └── analytics.py        # Analytics (coming soon)
+│   │   │   ├── chat.py             # RAG chatbot
+│   │   │   ├── export.py           # Export endpoints
+│   │   │   ├── analytics.py        # Analytics endpoints
+│   │   │   ├── admin.py            # Admin panel
+│   │   │   ├── income.py           # Income tracking
+│   │   │   ├── salary.py           # Salary management
+│   │   │   ├── templates.py        # OCR templates
+│   │   │   ├── ocr_corrections.py  # OCR corrections
+│   │   │   ├── cleanup.py          # Auto-cleanup
+│   │   │   └── user_settings.py    # User preferences
 │   │   ├── models/                 # Database models
 │   │   ├── schemas/                # Pydantic schemas
 │   │   ├── services/               # Business logic
 │   │   │   ├── ocr_service.py      # PaddleOCR wrapper
-│   │   │   ├── rag_service.py      # RAG (coming soon)
-│   │   │   └── export_service.py   # Google Sheets (coming soon)
+│   │   │   ├── template_ocr_service.py  # Template-based OCR
+│   │   │   ├── template_manager.py      # Template management
+│   │   │   ├── zone_extractor.py        # Zone extraction
+│   │   │   ├── rag_service.py           # RAG implementation
+│   │   │   ├── vector_store.py          # Vector store operations
+│   │   │   ├── vlm_service.py           # Vision-language model
+│   │   │   ├── gemini_vlm_service.py    # Gemini VLM
+│   │   │   ├── transaction_classifier.py  # Transaction classification
+│   │   │   ├── text_cleaning_service.py  # Text cleaning
+│   │   │   ├── auth_service.py          # Authentication
+│   │   │   └── excel_export_service.py  # Excel export
 │   │   └── database/               # Database configuration
 │   ├── requirements.txt
 │   ├── alembic.ini
@@ -183,14 +206,28 @@ ocr-bank2/
 ├── frontend/
 │   ├── src/
 │   │   ├── pages/                  # Page components
-│   │   │   ├── Dashboard.tsx
-│   │   │   ├── Upload.tsx          # Upload page (coming soon)
-│   │   │   ├── Review.tsx          # Review page (coming soon)
-│   │   │   ├── Receipts.tsx        # Receipt list (coming soon)
-│   │   │   ├── Chat.tsx            # Chatbot (coming soon)
-│   │   │   └── Analytics.tsx       # Analytics (coming soon)
+│   │   │   ├── Login.tsx           # Login page
+│   │   │   ├── Register.tsx        # Registration page
+│   │   │   ├── Dashboard.tsx       # Dashboard (layout)
+│   │   │   ├── Upload.tsx          # Upload page
+│   │   │   ├── Review.tsx          # Review page with zone overlay
+│   │   │   ├── ReceiptsList.tsx    # Receipt list with filters
+│   │   │   ├── Chat.tsx            # RAG chatbot
+│   │   │   ├── Analytics.tsx       # Analytics dashboard
+│   │   │   ├── Export.tsx          # Export page
+│   │   │   ├── Settings.tsx        # User settings
+│   │   │   └── Admin.tsx           # Admin panel
 │   │   ├── components/             # Reusable components
+│   │   │   ├── ProtectedRoute.tsx  # Auth wrapper
+│   │   │   ├── ZoneOverlay.tsx     # Zone visualization
+│   │   │   └── ErrorBoundary.tsx   # Error handling
 │   │   ├── services/               # API service layer
+│   │   │   ├── api.ts              # Base API client
+│   │   │   ├── authService.ts      # Auth API
+│   │   │   ├── receiptService.ts   # Receipt API
+│   │   │   ├── analyticsService.ts # Analytics API
+│   │   │   ├── exportService.ts    # Export API
+│   │   │   └── userService.ts      # User API
 │   │   ├── types/                  # TypeScript types
 │   │   └── utils/                  # Utility functions
 │   ├── package.json
@@ -199,162 +236,19 @@ ocr-bank2/
 └── README.md
 ```
 
-## 📦 Deployment
-
-### Production Deployment
-
-**Free Deployment Guide:**
-- [QUICK_DEPLOY.md](QUICK_DEPLOY.md) - 30-minute quick deployment
-- [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) - Comprehensive deployment guide
-
-**Deployment Scripts:**
-```bash
-# Organize project for deployment
-./scripts/organize-project.sh
-
-# Deploy backend to Railway
-./scripts/deploy-backend.sh
-
-# Deploy frontend to Vercel
-./scripts/deploy-frontend.sh
-
-# Test deployment
-./scripts/test-deployment.sh <backend-url> <frontend-url>
-```
-
-**Services Used (All Free):**
-- **Frontend:** Vercel (React hosting)
-- **Backend:** Railway (FastAPI hosting)
-- **Database:** Supabase (PostgreSQL)
-
-**Deployment Documentation:**
-- [Deployment Guide](docs/deployment/DEPLOYMENT_GUIDE.md) - Detailed deployment instructions
-- [Deployment Checklist](docs/deployment/DEPLOYMENT_CHECKLIST.md) - Pre-deployment checklist
-- [Setup Guide](docs/deployment/SETUP-COMPLETE.md) - Post-deployment setup
-
----
-
-## Project Structure
-
-### Organized Structure
-
-```
-ocr-bank2/
-├── backend/                    # FastAPI backend
-│   ├── app/                   # Application code
-│   │   ├── api/              # API endpoints
-│   │   ├── models/           # Database models
-│   │   ├── schemas/          # Pydantic schemas
-│   │   ├── services/         # Business logic
-│   │   ├── database/         # Database config
-│   │   └── main.py           # FastAPI app
-│   ├── scripts/              # Utility scripts
-│   ├── tests/                # Backend tests
-│   ├── config/               # Configuration files
-│   ├── requirements.txt      # Python dependencies
-│   └── alembic.ini           # Database migrations
-│
-├── frontend/                  # React frontend
-│   ├── src/
-│   │   ├── pages/           # Page components
-│   │   ├── components/      # Reusable components
-│   │   ├── services/        # API service layer
-│   │   ├── types/           # TypeScript types
-│   │   └── utils/           # Utility functions
-│   ├── package.json         # Node dependencies
-│   └── vite.config.ts       # Vite config
-│
-├── deployment/               # Deployment configurations
-│   ├── railway/             # Railway configs
-│   ├── vercel/              # Vercel configs
-│   └── supabase/            # Supabase configs
-│
-├── docs/                     # Documentation
-│   ├── guides/              # User guides
-│   ├── api/                 # API documentation
-│   └── deployment/          # Deployment guides
-│
-├── tests/                    # Test files and data
-│   ├── images/              # Test images
-│   └── data/                # Test data
-│
-├── scripts/                  # Deployment and utility scripts
-│   ├── organize-project.sh  # Project organization
-│   ├── deploy-backend.sh    # Backend deployment
-│   ├── deploy-frontend.sh   # Frontend deployment
-│   └── test-deployment.sh   # Deployment testing
-│
-├── docker-compose.yml        # Local development
-├── railway.toml             # Railway configuration
-├── README.md                # This file
-├── QUICK_DEPLOY.md          # Quick deployment guide
-└── DEPLOY_INSTRUCTIONS.md   # Detailed deployment guide
-```
-
----
-
-## 🆕 Recent Updates (May 2026)
-
-### Production-Ready Configuration
-- **Security Enhancement**: Removed local LLM dependencies (LM Studio, local Gemma)
-- **API Key Management**: Created `.env.example` template for safe deployment
-- **Cloud-Ready Paths**: Default storage paths now use `/tmp` for cloud compatibility
-- **Cleaner Codebase**: Removed unused local LLM service files
-- **Better Defaults**: Production-ready configuration in `backend/app/config.py`
-
-### Files Changed
-- ✅ `backend/.env.example` - New production template (safe to commit to git)
-- ✅ `backend/.env` - Updated for local development only
-- ✅ `backend/app/config.py` - Removed `lm_studio` and `local_gemma` options
-- ✅ `backend/app/api/upload.py` - Removed LM Studio fallback logic
-- ✅ `backend/app/services/llm_interface.py` - Simplified to cloud APIs only
-- ✅ `backend/app/services/lm_studio_vlm_service.py` - Removed (no longer needed)
-
-### Deployment Benefits
-1. **Simpler Setup**: No local LLM configuration needed for deployment
-2. **Better Security**: API keys properly managed via environment variables
-3. **Cloud-Native**: Uses cloud APIs (Gemini, Groq) instead of local models
-4. **Easier Maintenance**: Fewer dependencies and moving parts
-5. **Production-Ready**: All configuration externalized via environment variables
-
-### API Keys Required for Deployment
-- Groq API Key ([Get free key](https://console.groq.com))
-- Gemini API Key ([Get free key](https://ai.google.dev))
-
-See [QUICK_DEPLOY.md](QUICK_DEPLOY.md) for deployment instructions.
-
----
-
-## Current Implementation Status
-
-### ✅ Completed
-- Backend FastAPI project structure
-- PostgreSQL database setup with Docker
-- Database models and Alembic migrations
-- PaddleOCR service with Thai language support
-- Upload and receipt API endpoints
-- Frontend React + TypeScript setup with Vite
-- Basic routing and navigation
-- TypeScript types and API service layer
-- **Deployment scripts and documentation**
-- **Organized project structure**
-
-### 🚧 In Progress
-- Upload page with drag-and-drop
-- Review page with image viewer
-- Receipt list page
-
-### 📋 Planned
-- RAG service with LLM interface
-- Chatbot interface
-- Google Sheets export
-- Analytics dashboard
-
 ## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login and get access token
+- `GET /api/auth/me` - Get current user info
+- `PUT /api/auth/me` - Update current user
 
 ### Upload & OCR
 - `POST /api/upload/` - Upload receipt images (batch)
 - `POST /api/upload/process-ocr/{id}` - Re-process OCR for receipt
+- `POST /api/upload/process-with-template` - Process with template
+- `POST /api/upload/crop-and-process` - Crop zone and process
 
 ### Receipts
 - `GET /api/receipts/` - List receipts (with filters and pagination)
@@ -363,6 +257,38 @@ See [QUICK_DEPLOY.md](QUICK_DEPLOY.md) for deployment instructions.
 - `POST /api/receipts/{id}/confirm` - Mark as confirmed
 - `DELETE /api/receipts/{id}` - Delete receipt
 - `GET /api/receipts/stats/overview` - Get statistics
+
+### Templates
+- `POST /api/templates/` - Create template
+- `GET /api/templates/` - List templates
+- `GET /api/templates/{id}` - Get template
+- `PUT /api/templates/{id}` - Update template
+- `DELETE /api/templates/{id}` - Delete template
+- `POST /api/templates/{id}/apply` - Apply template to image
+
+### Chat & RAG
+- `POST /api/chat/query` - Query receipt data with RAG
+- `POST /api/chat/reset` - Reset chat context
+
+### Analytics
+- `GET /api/analytics/overview` - Get overview statistics
+- `GET /api/analytics/spending-by-category` - Spending by category
+- `GET /api/analytics/monthly-trends` - Monthly spending trends
+
+### Export
+- `POST /api/export/excel` - Export to Excel
+- `POST /api/export/google-sheets` - Export to Google Sheets
+
+### Admin
+- `GET /api/admin/users` - List all users
+- `PUT /api/admin/users/{id}/role` - Update user role
+- `DELETE /api/admin/users/{id}` - Delete user
+
+### Income & Salary
+- `GET /api/income/` - List income records
+- `POST /api/income/` - Create income record
+- `GET /api/salary/` - List salary records
+- `POST /api/salary/` - Create salary record
 
 ## Development
 
@@ -412,13 +338,16 @@ docker compose restart
 docker compose logs postgres
 ```
 
-### PaddleOCR Issues
+### Tesseract OCR Issues
 ```bash
-# PaddleOCR will download models on first run
-# Make sure you have internet connection
-# Models will be cached in ~/.paddleocr/
+# Make sure Tesseract OCR is installed on your system
+# macOS: brew install tesseract
+# Ubuntu: sudo apt install tesseract-ocr
+# Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki
 
-# For GPU support, install CUDA and change OCR_DEVICE=gpu in .env
+# For Thai language support, install Thai language pack
+# macOS: brew install tesseract-lang
+# Ubuntu: sudo apt install tesseract-ocr-tha
 ```
 
 ### Frontend Build Issues
