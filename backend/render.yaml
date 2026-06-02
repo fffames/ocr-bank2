@@ -18,3 +18,7 @@ services:
         value: tesseract
       - key: PYTHON_VERSION
         value: 3.13.0
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_INDEX_NAME
+        value: ocr-bank-receipts

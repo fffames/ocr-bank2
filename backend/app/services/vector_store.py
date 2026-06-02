@@ -165,9 +165,44 @@ class VectorStore:
 _vector_store = None
 
 
-def get_vector_store() -> VectorStore:
-    """Get or create vector store singleton."""
+def get_vector_store():
+    """
+    Get or create vector store singleton.
+    Automatically uses Pinecone if API key is configured, otherwise ChromaDB.
+    """
     global _vector_store
-    if _vector_store is None:
-        _vector_store = VectorStore()
-    return _vector_store
+
+    # Check if we should use Pinecone (cloud deployment)
+    if settings.pinecone_api_key:
+        if not isinstance(_vector_store, VectorStorePineconeWrapper):
+            _vector_store = VectorStorePineconeWrapper()
+        return _vector_store
+    else:
+        # Use ChromaDB for local development
+        if _vector_store is None:
+            _vector_store = VectorStore()
+        return _vector_store
+
+
+class VectorStorePineconeWrapper:
+    """Wrapper that provides the same interface as VectorStore but uses Pinecone internally."""
+
+    def __init__(self):
+        from app.services.vector_store_pinecone import get_vector_store_pinecone
+        self._pinecone = get_vector_store_pinecone()
+        print("✅ Using Pinecone vector store (cloud)")
+
+    def index_receipt(self, receipt_id: int, receipt_data: dict) -> None:
+        return self._pinecone.index_receipt(receipt_id, receipt_data)
+
+    def search(self, query: str, n_results: int = 5) -> list:
+        return self._pinecone.search(query, n_results)
+
+    def delete_receipt(self, receipt_id: int) -> None:
+        return self._pinecone.delete_receipt(receipt_id)
+
+    def get_count(self) -> int:
+        return self._pinecone.get_count()
+
+    def clear_all(self) -> None:
+        return self._pinecone.clear_all()

@@ -55,8 +55,10 @@ class Settings(BaseSettings):
     groq_api_key: str = ""
     llm_provider: Literal["gemini"] = "gemini"
 
-    # Vector Store
-    chromadb_persist_directory: str = "/tmp/chromadb"
+    # Vector Store (Pinecone - free tier compatible)
+    pinecone_api_key: str = ""
+    pinecone_index_name: str = "ocr-bank-receipts"
+    pinecone_environment: str = "us-east-1-aws"
 
     # Google Sheets
     google_sheets_credentials_path: str = ""

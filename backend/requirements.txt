@@ -19,7 +19,7 @@ numpy<2.0.0
 
 # LLM & RAG
 google-generativeai>=0.3.2
-chromadb==0.4.22
+pinecone-client>=3.0.0
 groq>=0.11.0
 sentence-transformers>=2.2.2
 
