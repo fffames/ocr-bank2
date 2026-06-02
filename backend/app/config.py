@@ -29,8 +29,18 @@ class Settings(BaseSettings):
                         encoded_user = quote_plus(user)
                         encoded_password = quote_plus(password)
 
-                        # Reconstruct URL
-                        return f"postgresql://{encoded_user}:{encoded_password}@{host}"
+                        # Reconstruct URL with SSL for Supabase and Render
+                        # Add sslmode parameter if not already present
+                        if "sslmode" not in host:
+                            # Check if there are already query parameters
+                            if "?" in host:
+                                url = f"postgresql://{encoded_user}:{encoded_password}@{host}&sslmode=require"
+                            else:
+                                url = f"postgresql://{encoded_user}:{encoded_password}@{host}?sslmode=require"
+                        else:
+                            url = f"postgresql://{encoded_user}:{encoded_password}@{host}"
+
+                        return url
 
             return self.database_url
         except Exception as e:
