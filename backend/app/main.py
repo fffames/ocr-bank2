@@ -96,40 +96,68 @@ async def root():
 async def health_check():
     return {"status": "healthy"}
 
-# Import routers with better error handling
+# Import routers with better error handling - load each independently
 print("📦 Loading API routers...")
+
+def include_router_with_fallback(router_module, router_name, **kwargs):
+    """Try to include a router, logging error if it fails."""
+    try:
+        app.include_router(router_module.router, **kwargs)
+        print(f"  ✅ {router_name} router loaded")
+        return True
+    except Exception as e:
+        print(f"  ❌ {router_name} router failed: {e}")
+        return False
+
+# Track which routers loaded successfully
+loaded_routers = []
+failed_routers = []
+
+# Load migrate router FIRST (doesn't depend on database)
 try:
-    from app.api import auth, admin, upload, receipts, chat, templates, user_settings, export, income, income_categories, salary, ocr_corrections, cleanup, migrate
+    from app.api import migrate
+    if include_router_with_fallback(migrate, "Migration", prefix="/api", tags=["migration"]):
+        loaded_routers.append("migrate")
+    else:
+        failed_routers.append("migrate")
+except ImportError as e:
+    print(f"  ❌ Migrate router import failed: {e}")
+    failed_routers.append("migrate")
 
-    # Load migrate router FIRST (before database-dependent routers)
-    app.include_router(migrate.router, prefix="/api", tags=["migration"])
-    print("  ✅ Migration router loaded")
+# Try to load each router independently
+router_configs = [
+    ("auth", "Authentication", {"prefix": "/api/auth", "tags": ["authentication"]}),
+    ("admin", "Admin", {"prefix": "/api/admin", "tags": ["admin"]}),
+    ("upload", "Upload", {"prefix": "/api/upload", "tags": ["upload"]}),
+    ("receipts", "Receipts", {"prefix": "/api/receipts", "tags": ["receipts"]}),
+    ("chat", "Chat", {"prefix": "/api/chat", "tags": ["chat"]}),
+    ("templates", "Templates", {"prefix": "/api", "tags": ["templates"]}),
+    ("user_settings", "User Settings", {"prefix": "/api/user", "tags": ["user_settings"]}),
+    ("export", "Export", {"prefix": "/api/export", "tags": ["export"]}),
+    ("income", "Income", {"prefix": "/api/income", "tags": ["income"]}),
+    ("income_categories", "Income Categories", {"prefix": "/api/income-categories", "tags": ["income_categories"]}),
+    ("salary", "Salary", {"prefix": "/api/salary", "tags": ["salary"]}),
+    ("ocr_corrections", "OCR Corrections", {"prefix": "/api", "tags": ["ocr_corrections"]}),
+    ("cleanup", "Cleanup", {"prefix": "/api/cleanup", "tags": ["cleanup"]}),
+]
 
-    app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
-    print("  ✅ Authentication router loaded")
+for module_name, display_name, config in router_configs:
+    try:
+        module = __import__(f"app.api.{module_name}", fromlist=[module_name])
+        if include_router_with_fallback(module, display_name, **config):
+            loaded_routers.append(module_name)
+        else:
+            failed_routers.append(module_name)
+    except ImportError as e:
+        print(f"  ❌ {display_name} import failed: {e}")
+        failed_routers.append(module_name)
 
-    app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
-    print("  ✅ Admin router loaded")
+# Print summary
+print(f"\n📊 Router Loading Summary:")
+print(f"  ✅ Loaded: {len(loaded_routers)} routers")
+if failed_routers:
+    print(f"  ❌ Failed: {len(failed_routers)} routers ({', '.join(failed_routers)})")
+    print(f"  💡 Tip: If database routers failed, run POST /api/migrate to setup database")
 
-    # Load all routers (database is now properly configured)
-    app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
-    app.include_router(receipts.router, prefix="/api/receipts", tags=["receipts"])
-    app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
-    app.include_router(templates.router, prefix="/api", tags=["templates"])
-    app.include_router(user_settings.router, prefix="/api/user", tags=["user_settings"])
-    app.include_router(export.router, prefix="/api/export", tags=["export"])
-    app.include_router(income.router, prefix="/api/income", tags=["income"])
-    app.include_router(income_categories.router, prefix="/api/income-categories", tags=["income_categories"])
-    app.include_router(salary.router, prefix="/api/salary", tags=["salary"])
-    app.include_router(ocr_corrections.router, prefix="/api", tags=["ocr_corrections"])
-    app.include_router(cleanup.router, prefix="/api/cleanup", tags=["cleanup"])
-    print("  ✅ All database routers loaded")
-
-    print("✅ All routers loaded successfully")
-    # Note: Static file serving is now mounted in lifespan() after directory creation
-
-except Exception as e:
-    import traceback
-    print(f"⚠️  Warning: Router import error: {e}")
-    print(f"⚠️  Traceback: {traceback.format_exc()}")
-    print("⚠️  App will start with limited functionality")
+if not loaded_routers:
+    print("  ⚠️  WARNING: No routers loaded! App will have very limited functionality.")
