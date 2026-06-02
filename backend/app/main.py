@@ -71,7 +71,8 @@ async def validation_exception_handler(request, exc: RequestValidationError):
     )
 
 # Configure CORS from environment variable
-cors_origins = settings.cors_origins.split(",") if settings.cors_origins else ["http://localhost:5173", "http://localhost:3000"]
+default_origins = ["http://localhost:5173", "http://localhost:3000", "https://frontend-mauve-tau-82.vercel.app"]
+cors_origins = settings.cors_origins.split(",") if settings.cors_origins else default_origins
 
 app.add_middleware(
     CORSMiddleware,
@@ -98,7 +99,11 @@ async def health_check():
 # Import routers with better error handling
 print("📦 Loading API routers...")
 try:
-    from app.api import auth, admin, upload, receipts, chat, templates, user_settings, export, income, income_categories, salary, ocr_corrections, cleanup
+    from app.api import auth, admin, upload, receipts, chat, templates, user_settings, export, income, income_categories, salary, ocr_corrections, cleanup, migrate
+
+    # Load migrate router FIRST (before database-dependent routers)
+    app.include_router(migrate.router, prefix="/api", tags=["migration"])
+    print("  ✅ Migration router loaded")
 
     app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
     print("  ✅ Authentication router loaded")

@@ -30,5 +30,5 @@ RUN mkdir -p /app/images /app/data/chromadb /app/uploads
 # Expose port
 EXPOSE 8000
 
-# Run the proper main app
-CMD ["python", "-u", "-c", "import os; from app.main import app; import uvicorn; uvicorn.run(app, host='0.0.0.0', port=int(os.getenv('PORT', 8000)), log_level='info')"]
+# Run migrations and then start the app
+CMD ["sh", "-c", "alembic upgrade head && python -u -c 'import os; from app.main import app; import uvicorn; uvicorn.run(app, host=\"0.0.0.0\", port=int(os.getenv(\"PORT\", 8000)), log_level=\"info\")'"]
