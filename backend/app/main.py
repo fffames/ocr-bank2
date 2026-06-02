@@ -94,7 +94,21 @@ async def root():
 # Health check endpoint - CRITICAL FOR RAILWAY
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    """Health check endpoint that also checks database connectivity."""
+    health_status = {"status": "healthy", "database": "unknown"}
+
+    # Try to check database connection
+    try:
+        from app.database.connection import engine
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        health_status["database"] = "connected"
+    except Exception as e:
+        health_status["database"] = f"disconnected: {str(e)[:100]}"
+        health_status["status"] = "degraded"
+
+    return health_status
 
 # Import routers with better error handling - load each independently
 print("📦 Loading API routers...")
