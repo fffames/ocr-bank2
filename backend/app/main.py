@@ -71,7 +71,7 @@ async def validation_exception_handler(request, exc: RequestValidationError):
     )
 
 # Configure CORS from environment variable
-default_origins = ["http://localhost:5173", "http://localhost:3000", "https://frontend-mauve-tau-82.vercel.app"]
+default_origins = ["http://localhost:5173", "http://localhost:3000", "https://ocr-bank2.vercel.app", "https://frontend-mauve-tau-82.vercel.app"]
 cors_origins = settings.cors_origins.split(",") if settings.cors_origins else default_origins
 
 app.add_middleware(
